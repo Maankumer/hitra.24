@@ -1,0 +1,3044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>HITRA WMS</title>
+
+<!-- FIREBASE - ADDED ONLY FOR CLOUD SYNC -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics-compat.js"></script>
+
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#fff8f8;color:#17384b}
+button,input,select,textarea{font:inherit}button{cursor:pointer;border:0}.hidden{display:none!important}
+.topbar{height:64px;background:#fff;border-bottom:1px solid #f1dfe1;display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:20;box-shadow:0 2px 10px #7d4b4b10}
+.logo{font-size:24px;font-weight:800;color:#c85a63}.logo small{display:block;font-size:10px;color:#71909f;letter-spacing:1px}
+.userbox{display:flex;align-items:center;gap:12px}.userbadge{background:#fff0f1;padding:9px 14px;border-radius:20px;font-weight:700;color:#b74450}.logout{background:#e65b68;color:#fff;padding:9px 15px;border-radius:8px}
+.page{display:none;padding:22px;max-width:1600px;margin:auto}.page.active{display:block}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eefaff,#ffecee)}
+.login-card{width:420px;background:#fff;border-radius:20px;padding:35px;box-shadow:0 15px 45px #b34b5518}
+.login-card h1{text-align:center;color:#c85a63;margin:0}.login-card p{text-align:center;color:#75909c}
+.form-group{margin-bottom:14px}label{font-size:13px;font-weight:700;display:block;margin-bottom:6px}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid #ead9db;border-radius:8px;background:#fff;color:#17384b;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#c85a63}.login-btn{width:100%;padding:13px;background:#c85a63;color:#fff;border-radius:9px;font-weight:700;margin-top:8px}
+.admin-btn{position:fixed;right:20px;top:18px;background:#17384b;color:#fff;padding:9px 15px;border-radius:8px}.error{color:#e65b68;text-align:center;font-size:13px;margin-top:10px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.tab{padding:11px 17px;background:#fff;border:1px solid #f0dddd;border-radius:9px;color:#72565b;font-weight:700}.tab.active{background:#c85a63;color:#fff}
+.section{display:none}.section.active{display:block}.title-row{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px;flex-wrap:wrap}
+h2{margin:0;color:#17384b}h3{margin-top:0}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media(max-width:1000px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.grid,.grid2{grid-template-columns:1fr}.page{padding:12px}.login-card{width:92%}}
+.card{background:#fff;border:1px solid #efdddd;border-radius:13px;padding:16px;box-shadow:0 4px 14px #0000000a}
+.kpi-title{font-size:12px;color:#7793a0;font-weight:700}.kpi-value{font-size:25px;font-weight:800;color:#c85a63;margin-top:6px}
+.filters{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:15px}@media(max-width:1100px){.filters{grid-template-columns:repeat(3,1fr)}}@media(max-width:650px){.filters{grid-template-columns:1fr}}
+.chart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:15px}@media(max-width:1000px){.chart-grid{grid-template-columns:1fr}}
+.chart{min-height:310px;display:flex;flex-direction:column;justify-content:center;align-items:center}.chart h3{align-self:flex-start;font-size:15px}
+.donut{width:175px;height:175px;border-radius:50%;position:relative}.donut:after{content:"";position:absolute;width:100px;height:100px;background:#fff;border-radius:50%;left:37px;top:37px}
+.donut-text{position:absolute;z-index:2;left:0;right:0;top:72px;text-align:center;font-weight:800}
+.legend{display:flex;gap:15px;margin-top:15px;font-size:12px}.dot,.dot2{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}.dot{background:#c85a63}.dot2{background:#e7a8ad}
+.bars{width:92%;height:190px;display:flex;align-items:flex-end;justify-content:space-around;border-bottom:2px solid #e5c6c9;padding:0 10px;gap:8px}
+.bar-item{height:100%;display:flex;align-items:flex-end;gap:3px;flex:1;justify-content:center}.bar{width:28px;background:#c85a63;border-radius:5px 5px 0 0;min-height:2px}.bar2{background:#e7a8ad}.bar-label{font-size:10px;margin-top:5px;text-align:center;max-width:70px;overflow:hidden;text-overflow:ellipsis}
+.table-wrap{overflow:auto;background:#fff;border-radius:12px;border:1px solid #efdddd;margin-top:15px}table{width:100%;border-collapse:collapse;min-width:1100px}
+th{background:#fff0f1;color:#72565b;font-size:12px;padding:11px;text-align:left;white-space:nowrap}td{padding:10px;border-top:1px solid #edf4f7;font-size:12px;white-space:nowrap}tr:hover td{background:#fffafa}
+.btn{padding:9px 14px;border-radius:8px;font-weight:700}.btn-blue{background:#c85a63;color:#fff}.btn-green{background:#44a578;color:#fff}.btn-red{background:#e65b68;color:#fff}.btn-gray{background:#f6eded;color:#72565b}.btn-yellow{background:#f2bd32;color:#fff}
+.notice{background:#fff0f1;border-left:4px solid #c85a63;padding:12px;border-radius:7px;margin-bottom:15px;font-size:13px}
+.entry-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}@media(max-width:1100px){.entry-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.entry-grid{grid-template-columns:1fr}}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:100}.modal.show{display:flex}.modal-box{width:440px;max-width:94%;max-height:90vh;overflow:auto;background:#fff;border-radius:15px;padding:25px}.modal-actions{display:flex;gap:8px;margin-top:15px}
+.status{padding:5px 9px;border-radius:15px;font-size:11px;font-weight:700}.status.pending{color:#9b6d18;background:#fff7e3}.status.running{color:#b74450;background:#fff0f1}.status.complete{color:#2f8b68;background:#eaf7f0}
+.small{font-size:11px;color:#78909c}.clickable{cursor:pointer}.selected-chart{outline:3px solid #c85a6355}.kpi-click{transition:transform .15s,box-shadow .15s}.kpi-click:hover{transform:translateY(-2px);box-shadow:0 8px 20px #c85a631c}.chart-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}.chart-filter-btn{padding:7px 12px;border:1px solid #efd4d7;background:#fff7f8;color:#8c4f55;border-radius:999px;font-weight:700;font-size:11px}.chart-filter-btn:hover,.chart-filter-btn.active{background:#c85a63;color:#fff}.edit-modal-box{width:680px}.edit-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.employee-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.overtime-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}@media(max-width:1000px){.employee-grid,.overtime-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.employee-grid,.overtime-grid{grid-template-columns:1fr}}.readonly{background:#f4f7f9}.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* CLOUD STATUS - ADDED ONLY */
+#cloudStatus{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  z-index:999;
+  background:#fff;
+  border:1px solid #efdddd;
+  border-radius:20px;
+  padding:8px 13px;
+  font-size:11px;
+  font-weight:700;
+  box-shadow:0 4px 15px #00000012;
+  color:#9b6d18;
+}
+#cloudStatus.online{color:#2f8b68;background:#eaf7f0}
+#cloudStatus.offline{color:#b74450;background:#fff0f1}
+</style>
+</head>
+<body>
+
+<div id="loginPage" class="login-wrap">
+<button class="admin-btn" onclick="openAdmin()">⚙ Admin</button>
+<div class="login-card">
+<h1>HITRA</h1><p>Warehouse Management System</p>
+<div class="form-group"><label>Login ID</label><input id="loginUser" placeholder="Enter Login ID"></div>
+<div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter Password"></div>
+<div class="form-group"><label>Role</label><select id="loginRole"><option value="">Select Role</option><option value="csr">CSR</option><option value="warehouse">Warehouse</option><option value="supervisor">Supervisor</option><option value="manager">Manager</option></select></div>
+<button class="login-btn" onclick="login()">LOGIN</button><div id="loginError" class="error"></div>
+</div></div>
+
+<div id="adminModal" class="modal"><div class="modal-box">
+<h2>Admin Panel</h2><p class="small">Admin Login: patel.09 / 2816</p>
+<div id="adminLoginBox">
+<div class="form-group"><label>Admin ID</label><input id="adminUser"></div>
+<div class="form-group"><label>Admin Password</label><input id="adminPass" type="password"></div>
+<button class="btn btn-blue" onclick="adminLogin()">Admin Login</button>
+</div>
+<div id="adminPanelBox" class="hidden">
+<div class="form-group"><label>New Login ID</label><input id="newUser"></div>
+<div class="form-group"><label>New Password</label><input id="newPass"></div>
+<div class="form-group"><label>Role</label><select id="newRole"><option value="csr">CSR</option><option value="warehouse">Warehouse</option><option value="supervisor">Supervisor</option><option value="manager">Manager</option></select></div>
+<button class="btn btn-green" onclick="createUser()">Create User</button>
+<div class="table-wrap"><table style="min-width:350px"><thead><tr><th>Login ID</th><th>Role</th><th>Action</th></tr></thead><tbody id="usersTable"></tbody></table></div>
+</div>
+<div class="modal-actions"><button class="btn btn-gray" onclick="closeAdmin()">Close</button></div>
+</div></div>
+
+<div id="appHeader" class="topbar hidden"><div class="logo">HITRA <small>WAREHOUSE MANAGEMENT SYSTEM</small></div><div class="userbox"><div class="userbadge" id="loggedUser"></div><button class="logout" onclick="logout()">Logout</button></div></div>
+
+<div id="csrPage" class="page">
+<div class="title-row"><h2>CSR / Office</h2></div>
+<div class="tabs">
+<button class="tab active" onclick="showOffice('dashboard',this)">Dashboard</button>
+<button class="tab" onclick="showOffice('entry',this)">Data Entry</button>
+<button class="tab" onclick="showOffice('masters',this)">Masters Making</button>
+</div>
+
+<div id="officeDashboard" class="section active">
+<div class="filters">
+<div><label>Date From</label><input type="date" id="fDateFrom" onchange="renderAll()"></div>
+<div><label>Date To</label><input type="date" id="fDateTo" onchange="renderAll()"></div>
+<div><label>Customer</label><select id="fCustomer" onchange="renderAll()"></select></div>
+<div><label>Vehicle Name</label><select id="fVehicleType" onchange="renderAll()"></select></div>
+<div><label>Vehicle Number</label><input id="fVehicleNumber" oninput="renderAll()"></div>
+<div><label>Status</label><select id="fStatus" onchange="renderAll()"></select></div>
+<div><label>UOM</label><select id="fUom" onchange="renderAll()"></select></div>
+<div><label>DG / Non-DG</label><select id="fDg" onchange="renderAll()"></select></div>
+<div><label>DG Class</label><select id="fDgClass" onchange="renderAll()"></select></div>
+<div><label>CSR</label><select id="fCsr" onchange="renderAll()"></select></div>
+<div><label>Dock</label><select id="fDock" onchange="renderAll()"></select></div><div><label>Job Type</label><select id="fType" onchange="renderAll()"></select></div><div style="display:flex;align-items:end"><button class="btn btn-gray" style="width:100%" onclick="clearDashboardFilters()">Clear Filters</button></div>
+</div>
+<div class="grid">
+<div class="card kpi-click"><div class="kpi-title">Total Customer</div><div id="kCustomerNew" class="kpi-value">0</div></div>
+<div class="card kpi-click"><div class="kpi-title">Total Quantity</div><div id="kQtyNew" class="kpi-value">0</div></div>
+<div class="card kpi-click clickable" onclick="setDashboardFilter('fType','Inbound')"><div class="kpi-title">Total Inbound Jobs</div><div id="kInboundNew" class="kpi-value">0</div></div>
+<div class="card kpi-click clickable" onclick="setDashboardFilter('fType','Outbound')"><div class="kpi-title">Total Outbound Jobs</div><div id="kOutboundNew" class="kpi-value">0</div></div>
+<div class="card kpi-click"><div class="kpi-title">Avg. Loading Hours</div><div id="kLoadingNew" class="kpi-value">0.00 h</div></div>
+<div class="card kpi-click"><div class="kpi-title">Avg. Offloading Hours</div><div id="kOffloadingNew" class="kpi-value">0.00 h</div></div>
+</div>
+
+<div class="chart-grid">
+<div id="chartDg" class="card chart"><h3>DG vs Non-DG</h3><div id="dgDonut" class="donut clickable" title="Click chart to toggle DG / Non-DG"><div id="dgText" class="donut-text">0 / 0</div></div><div class="chart-actions"><button id="dgBtnDG" class="chart-filter-btn" onclick="setDashboardFilter('fDg','DG')">DG: 0</button><button id="dgBtnNon" class="chart-filter-btn" onclick="setDashboardFilter('fDg','Non-DG')">Non-DG: 0</button></div></div>
+<div id="chartDock" class="card chart"><h3>Quantity vs Dock</h3><div id="dockChart" class="bars"></div><div class="small">Click any dock bar to filter the whole dashboard.</div></div>
+<div id="chartType" class="card chart"><h3>Inbound vs Outbound Jobs</h3><div id="typeDonut" class="donut clickable" title="Click chart to toggle Inbound / Outbound"><div id="typeText" class="donut-text">0 / 0</div></div><div class="chart-actions"><button id="typeBtnIn" class="chart-filter-btn" onclick="setDashboardFilter('fType','Inbound')">Inbound: 0</button><button id="typeBtnOut" class="chart-filter-btn" onclick="setDashboardFilter('fType','Outbound')">Outbound: 0</button></div><div class="small">Click the chart or a button to filter.</div></div>
+</div>
+
+<div class="title-row" style="margin-top:20px"><h3>Day-to-Day Data</h3><button class="btn btn-green" onclick="exportOffice()">⬇ Export Excel / CSV</button></div>
+<div class="table-wrap"><table>
+<thead><tr><th>Date Of Job</th><th>Job Number</th><th>Type</th><th>Customer</th><th>CSR</th><th>QTY</th><th>UOM</th><th>Type Of Vehicle</th><th>Vehicle Number</th><th>Status</th><th>Assigned Tally</th><th>Estimated Shipment Date</th><th>Requested Time Slot</th><th>Approved Time Slot</th><th>Arrival Date</th><th>Reporting Time</th><th>Dispatch Time</th><th>Labelling Status</th><th>Customs Clearance</th><th>Transportation</th><th>VAS Activity</th><th>Remarks</th><th>Edit</th></tr></thead>
+<tbody id="officeTable"></tbody></table></div>
+</div>
+
+<div id="officeEntry" class="section">
+<div class="notice">Save keeps the entry in Office. Send forwards it to Warehouse and Supervisor. Warehouse and Supervisor updates remain connected to this job.</div>
+<div class="card"><h3>Office Data Entry</h3><div class="entry-grid">
+<div><label>Date Of Job</label><input id="eDate" type="date"></div><div><label>Job Number</label><input id="eJob"></div>
+<div><label>Type</label><select id="eType"><option>Inbound</option><option>Outbound</option></select></div><div><label>Customer Name</label><select id="eCustomer"></select></div>
+<div><label>CSR Name</label><input id="eCsr"></div><div><label>QTY</label><input id="eQty" type="number" min="0"></div>
+<div><label>UOM</label><select id="eUom"></select></div><div><label>Type Of Vehicle</label><select id="eVehicle"></select></div>
+<div><label>Vehicle Number</label><input id="eVehicleNumber" placeholder="e.g. DXB-12345"></div><div><label>Status</label><select id="eStatus"></select></div>
+<div><label>Estimated Shipment Date</label><input id="eEstDate" type="date"></div><div><label>Requested Time Slot</label><input id="eRequested" type="time"></div>
+<div><label>DG / Non-DG</label><select id="eDg" onchange="toggleDgClass()"></select></div><div><label>DG Class</label><select id="eDgClass"></select></div>
+<div><label>Dock</label><select id="eDock"></select></div><div><label>Customs Clearance</label><select id="eCustoms"><option>Yes</option><option>No</option><option>Others</option></select></div>
+<div><label>Transportation</label><select id="eTransport"><option>Yes</option><option>No</option></select></div><div><label>VAS Activity</label><select id="eVas"></select></div>
+<div><label>Gate Pass In</label><input id="eGateIn" type="number" min="0"></div><div><label>Gate Pass Out</label><input id="eGateOut" type="number" min="0"></div>
+<div><label>Overtime</label><select id="eOvertime"><option>Yes</option><option>No</option></select></div><div><label>Remarks</label><input id="eRemarks"></div>
+</div><div class="actions"><button class="btn btn-green" onclick="saveOffice('Saved')">Save</button><button class="btn btn-blue" onclick="saveOffice('Sent')">Send</button><button class="btn btn-gray" onclick="clearOffice()">Clear</button></div></div>
+<div class="title-row" style="margin-top:20px"><h3>Office Entries</h3></div><div class="table-wrap"><table style="min-width:950px"><thead><tr><th>Job</th><th>Customer</th><th>Type</th><th>QTY</th><th>Status</th><th>CSR</th><th>Sent</th><th>Edit</th><th>Delete</th></tr></thead><tbody id="officeMiniTable"></tbody></table></div>
+</div>
+
+<div id="officeMasters" class="section">
+<div class="card"><h3>Masters Making</h3><p class="small">Add values used in dropdown lists. Every master row can be deleted.</p>
+<div class="entry-grid"><div><label>Customer</label><input id="mCustomer"></div><div><label>UOM</label><input id="mUom"></div><div><label>CSR Name</label><input id="mCsr"></div><div><label>DG Class</label><input id="mDg"></div><div><label>Status</label><input id="mStatus"></div><div><label>VAS Activity</label><input id="mVas"></div><div><label>Vehicle Type</label><input id="mVehicle"></div><div><label>Tally Name</label><input id="mTally"></div><div><label>Dock</label><input id="mDock"></div></div>
+<div class="actions"><button class="btn btn-blue" onclick="addMasters()">Add Master Values</button></div></div>
+<div class="table-wrap"><table style="min-width:1000px"><thead><tr><th>Type</th><th>Value</th><th>Delete</th></tr></thead><tbody id="masterTable"></tbody></table></div>
+</div>
+</div>
+
+<div id="warehousePage" class="page"><div class="title-row"><h2>Warehouse</h2></div><div class="notice">Only jobs sent by Office are shown. After Warehouse POST, that job disappears from the Warehouse working list.</div>
+<div class="card"><div class="table-wrap" style="margin-top:0"><table style="min-width:1250px"><thead><tr><th>Job Number</th><th>Customer</th><th>Inbound / Outbound</th><th>QTY</th><th>Vehicle</th><th>Assigned Tally</th><th>Approved Time Slot</th><th>Arrival Date</th><th>Reporting Time</th><th>Dispatch Time</th><th>Labelling Status</th><th>Action</th></tr></thead><tbody id="warehouseTable"></tbody></table></div></div></div>
+
+<div id="supervisorPage" class="page"><div class="title-row"><h2>Supervisor</h2></div><div class="notice">Office / Warehouse connected jobs appear here. Save moves the Supervisor job to Saved Data below. Saved entries can be edited anytime.</div>
+<div class="card"><div class="table-wrap" style="margin-top:0"><table style="min-width:1150px"><thead><tr><th>Job Number</th><th>Type</th><th>Customer</th><th>CSR</th><th>Approved Time</th><th>Dispatch Time</th><th>Worker No's</th><th>Hours</th><th>Tally No's</th><th>Remarks</th><th>Damages Note</th><th>Save</th></tr></thead><tbody id="supervisorTable"></tbody></table></div></div>
+<div class="title-row" style="margin-top:20px"><h3>Supervisor Saved / Excel Data</h3><button class="btn btn-green" onclick="exportSupervisor()">⬇ Export Excel / CSV</button></div><div class="table-wrap"><table style="min-width:1150px"><thead><tr><th>Job Number</th><th>Type</th><th>Customer</th><th>CSR</th><th>Approved Time</th><th>Dispatch Time</th><th>Worker No's</th><th>Hours</th><th>Tally No's</th><th>Remarks</th><th>Damages</th><th>Edit</th></tr></thead><tbody id="supervisorSaved"></tbody></table></div>
+
+<div class="section-title" style="margin-top:22px"><h3 style="margin:0">Employee Making</h3><span class="small">Create employee name, post and hourly pay for Supervisor overtime.</span></div>
+<div class="card"><div class="employee-grid"><div><label>Employee Name</label><input id="empName" placeholder="Employee name"></div><div><label>Employee Post</label><input id="empPost" placeholder="Post / Position"></div><div><label>Hourly Pay</label><input id="empPay" type="number" min="0" step="0.01" placeholder="0.00"></div></div><div class="actions"><button class="btn btn-blue" onclick="saveEmployee()">Save Employee</button><button class="btn btn-gray" onclick="clearEmployee()">Clear</button></div></div>
+<div class="table-wrap"><table style="min-width:700px"><thead><tr><th>Employee Name</th><th>Post</th><th>Hourly Pay</th><th>Edit</th><th>Delete</th></tr></thead><tbody id="employeeTable"></tbody></table></div>
+
+<div class="section-title" style="margin-top:22px"><div><h3 style="margin:0">Overtime Entry</h3><span class="small">Hours are calculated from Start Time to Off Time. Total amount = billed hours × hourly pay unless you manually change the amount.</span></div><button class="btn btn-green" onclick="exportOvertime()">⬇ Export Overtime Excel / CSV</button></div>
+<div class="card"><div class="overtime-grid"><div><label>Date</label><input id="otDate" type="date"></div><div><label>Employee Name</label><select id="otEmployee" onchange="loadEmployeePay()"></select></div><div><label>Start Time</label><input id="otStart" type="time" onchange="calculateOvertime()"></div><div><label>Off Time</label><input id="otOff" type="time" onchange="calculateOvertime()"></div><div><label>Hourly Pay</label><input id="otHourlyPay" class="readonly" type="number" step="0.01" min="0" readonly></div><div><label>Customer Name</label><select id="otCustomer"></select></div><div><label>Receipt No</label><input id="otReceipt" placeholder="Manual receipt no"></div><div><label>Total Hours Billed</label><input id="otHours" type="number" step="0.01" min="0" oninput="calculateOvertimeAmount()"></div><div><label>Total Amount</label><input id="otAmount" type="number" step="0.01" min="0" placeholder="Auto / manual" oninput="markOtAmountManual()"></div><div style="grid-column:span 2"><label>Remarks</label><input id="otRemarks" placeholder="Optional"></div></div><div class="actions"><button class="btn btn-green" onclick="saveOvertime()">Save Overtime</button><button class="btn btn-gray" onclick="clearOvertime()">Clear</button></div></div>
+<div class="table-wrap"><table style="min-width:1250px"><thead><tr><th>Date</th><th>Employee Name</th><th>Post</th><th>Hourly Pay</th><th>Start Time</th><th>Off Time</th><th>Total Hours Billed</th><th>Customer</th><th>Receipt No</th><th>Total Amount</th><th>Remarks</th><th>Edit</th><th>Delete</th></tr></thead><tbody id="overtimeTable"></tbody></table></div>
+</div>
+
+<div id="supervisorEditModal" class="modal"><div class="modal-box edit-modal-box"><h2>Edit Supervisor Entry</h2><p class="small">Edit the saved entry and press Save Changes.</p><div class="edit-grid">
+<div><label>Job Number</label><input id="seJob" readonly></div><div><label>Type</label><input id="seType" readonly></div><div><label>Customer</label><input id="seCustomer" readonly></div><div><label>CSR</label><input id="seCsr" readonly></div><div><label>Approved Time</label><input id="seApproved" type="time"></div><div><label>Dispatch Time</label><input id="seDispatch" type="time"></div><div><label>Worker No's</label><input id="seWorkers"></div><div><label>Hours</label><input id="seHours" type="number" min="0" step="0.01"></div><div><label>Tally No's</label><input id="seTally"></div><div><label>Remarks</label><input id="seRemarks"></div><div><label>Damages Note</label><input id="seDamages"></div></div><div class="modal-actions"><button class="btn btn-green" onclick="saveSupervisorEdit()">Save Changes</button><button class="btn btn-gray" onclick="closeSupervisorEdit()">Cancel</button></div></div></div>
+
+<div id="overtimeEditModal" class="modal"><div class="modal-box edit-modal-box"><h2>Edit Overtime</h2><p class="small">Update the overtime entry and press Save Changes.</p><div class="edit-grid">
+<div><label>Date</label><input id="oeDate" type="date"></div><div><label>Employee Name</label><select id="oeEmployee" onchange="loadEditEmployeePay()"></select></div><div><label>Start Time</label><input id="oeStart" type="time" onchange="calculateEditOvertime()"></div><div><label>Off Time</label><input id="oeOff" type="time" onchange="calculateEditOvertime()"></div><div><label>Hourly Pay</label><input id="oePay" class="readonly" type="number" step="0.01" readonly></div><div><label>Customer Name</label><select id="oeCustomer"></select></div><div><label>Receipt No</label><input id="oeReceipt"></div><div><label>Total Hours Billed</label><input id="oeHours" type="number" step="0.01" min="0" oninput="calculateEditOvertimeAmount()"></div><div><label>Total Amount</label><input id="oeAmount" type="number" step="0.01" min="0"></div><div><label>Remarks</label><input id="oeRemarks"></div></div><div class="modal-actions"><button class="btn btn-green" onclick="saveOvertimeEdit()">Save Changes</button><button class="btn btn-gray" onclick="closeOvertimeEdit()">Cancel</button></div></div></div>
+
+<div id="managerPage" class="page"><div class="title-row"><h2>Manager Dashboard</h2></div><div class="notice">Manager overview. Detailed Manager requirements can be added later without changing the connected workflow.</div>
+<div class="grid"><div class="card"><div class="kpi-title">Total Jobs</div><div id="managerJobs" class="kpi-value">0</div></div><div class="card"><div class="kpi-title">Total Quantity</div><div id="managerQty" class="kpi-value">0</div></div><div class="card"><div class="kpi-title">Inbound Quantity</div><div id="managerInbound" class="kpi-value">0</div></div><div class="card"><div class="kpi-title">Outbound Quantity</div><div id="managerOutbound" class="kpi-value">0</div></div></div>
+<div class="card" style="margin-top:15px"><h3>All Connected Jobs</h3><div class="table-wrap"><table><thead><tr><th>Job</th><th>Customer</th><th>Type</th><th>QTY</th><th>Status</th><th>CSR</th><th>Reporting</th><th>Dispatch</th></tr></thead><tbody id="managerTable"></tbody></table></div></div>
+</div>
+
+<!-- CLOUD STATUS -->
+<div id="cloudStatus">☁ Cloud: Connecting...</div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   HITRA WMS FIREBASE CLOUD CONNECTION
+   ADDED WITHOUT CHANGING EXISTING APP WORKFLOW
+========================================================= */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBWSUavaLqiM_DP0W-3JbP6CqoGqKqJRdc",
+  authDomain: "hitra-60b4c.firebaseapp.com",
+  projectId: "hitra-60b4c",
+  storageBucket: "hitra-60b4c.firebasestorage.app",
+  messagingSenderId: "860835881167",
+  appId: "1:860835881167:web:799f1b9d9ad1e81cfcd7ba",
+  measurementId: "G-KGD64JPFDR"
+};
+
+let firebaseApp = null;
+let cloudDb = null;
+let cloudReady = false;
+let cloudHydrated = false;
+let cloudApplying = false;
+let cloudWriting = false;
+let cloudFirstSnapshot = true;
+
+try{
+  firebaseApp = firebase.initializeApp(firebaseConfig);
+  cloudDb = firebase.firestore();
+
+  try{
+    firebase.analytics();
+  }catch(e){
+    console.warn("Firebase Analytics unavailable:",e);
+  }
+
+  console.log("HITRA WMS Firebase initialized");
+}catch(e){
+  console.error("Firebase initialization failed:",e);
+}
+
+function setCloudStatus(text,state){
+  const box=document.getElementById("cloudStatus");
+  if(!box)return;
+
+  box.textContent=text;
+  box.classList.remove("online","offline");
+
+  if(state==="online")box.classList.add("online");
+  if(state==="offline")box.classList.add("offline");
+}
+
+const ADMIN_USER = "patel.09";
+const ADMIN_PASS = "2816";
+
+function loadJSON(key, fallback){
+  try{
+    const raw = localStorage.getItem(key);
+    if(!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed == null ? fallback : parsed;
+  }catch(e){
+    console.warn("Storage reset for:", key, e);
+    return fallback;
+  }
+}
+
+let users = loadJSON("hitra_users", [
+  {username:"csr01",password:"1234",role:"csr"},
+  {username:"warehouse01",password:"1234",role:"warehouse"},
+  {username:"supervisor01",password:"1234",role:"supervisor"},
+  {username:"manager01",password:"1234",role:"manager"}
+]);
+
+let jobs = loadJSON("hitra_jobs", []);
+let masters = loadJSON("hitra_masters", {
+  customers:["ABC Customer","XYZ Logistics"],
+  uoms:["PCS","BOX","PALLET"],
+  csrs:["csr01"],
+  dg:["DG","Non-DG"],
+  dgclass:["Class 3","Class 8","Class 9"],
+  statuses:["Pending","Running","Complete"],
+  vas:["Labelling","Repacking","None"],
+  vehicles:["Truck","Trailer","Van"],
+  tallies:["Tally 01","Tally 02"],
+  docks:["Dock 1","Dock 2","Dock 3"]
+});
+let supervisorData = loadJSON("hitra_supervisor", []);
+let employees = loadJSON("hitra_employees", []);
+let overtimeData = loadJSON("hitra_overtime", []);
+let currentUser = null;
+let editingId = null;
+let editingEmployeeId = null;
+
+function normalizeMasters(){
+  const defaults = {
+    customers:["ABC Customer","XYZ Logistics"], uoms:["PCS","BOX","PALLET"],
+    csrs:["csr01"], dg:["DG","Non-DG"], dgclass:["Class 3","Class 8","Class 9"],
+    statuses:["Pending","Running","Complete"], vas:["Labelling","Repacking","None"],
+    vehicles:["Truck","Trailer","Van"], tallies:["Tally 01","Tally 02"],
+    docks:["Dock 1","Dock 2","Dock 3"]
+  };
+
+  Object.keys(defaults).forEach(k=>{
+    if(!Array.isArray(masters[k]) || !masters[k].length) masters[k]=defaults[k].slice();
+  });
+}
+
+normalizeMasters();
+if(!Array.isArray(employees))employees=[];
+if(!Array.isArray(overtimeData))overtimeData=[];
+
+
+/* =========================================================
+   LOCAL DATABASE + FIREBASE CLOUD SAVE
+========================================================= */
+
+function db(){
+  try{
+    localStorage.setItem("hitra_users",JSON.stringify(users));
+    localStorage.setItem("hitra_jobs",JSON.stringify(jobs));
+    localStorage.setItem("hitra_masters",JSON.stringify(masters));
+    localStorage.setItem("hitra_supervisor",JSON.stringify(supervisorData));
+    localStorage.setItem("hitra_employees",JSON.stringify(employees));
+    localStorage.setItem("hitra_overtime",JSON.stringify(overtimeData));
+  }catch(e){
+    alert("Could not save browser data. Please check storage permission.");
+  }
+
+  saveCloudState();
+}
+
+
+/* =========================================================
+   FIRESTORE CLOUD DOCUMENT
+========================================================= */
+
+let cloudStateRef = null;
+
+if(cloudDb){
+  cloudStateRef = cloudDb
+    .collection("hitraWMS")
+    .doc("appState");
+}
+
+
+/* =========================================================
+   SAVE ALL WMS DATA TO FIREBASE
+========================================================= */
+
+function saveCloudState(){
+
+  if(!cloudDb || !cloudStateRef)return;
+
+  if(!cloudReady)return;
+  if(!cloudHydrated)return;
+  if(cloudApplying)return;
+  if(cloudWriting)return;
+
+  cloudWriting=true;
+
+  const cloudData={
+    users:users,
+    jobs:jobs,
+    masters:masters,
+    supervisorData:supervisorData,
+    employees:employees,
+    overtimeData:overtimeData,
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  cloudStateRef
+    .set(cloudData,{merge:true})
+    .then(()=>{
+      console.log("HITRA WMS: Data saved to Firebase Cloud");
+      setCloudStatus("☁ Cloud: Synced","online");
+    })
+    .catch(error=>{
+      console.error("HITRA Firebase Save Error:",error);
+      setCloudStatus("☁ Cloud: Save Error","offline");
+    })
+    .finally(()=>{
+      cloudWriting=false;
+    });
+}
+
+
+/* =========================================================
+   REAL-TIME FIRESTORE LISTENER
+   DEVICE 1 <-> DEVICE 2 <-> DEVICE 3
+========================================================= */
+
+function startCloudSync(){
+
+  if(!cloudStateRef){
+    setCloudStatus("☁ Cloud: Offline","offline");
+    return;
+  }
+
+  cloudStateRef.onSnapshot(
+    snapshot=>{
+
+      setCloudStatus("☁ Cloud: Connected","online");
+
+      if(!snapshot.exists){
+
+        cloudReady=true;
+        cloudHydrated=true;
+
+        console.log("HITRA WMS: Creating new Firebase cloud database...");
+
+        saveCloudState();
+
+        return;
+      }
+
+      const data=snapshot.data()||{};
+
+      /*
+       Prevent our own local update from unnecessarily
+       replacing the currently edited screen.
+      */
+      cloudApplying=true;
+
+      try{
+
+        if(Array.isArray(data.users)){
+          users=data.users;
+        }
+
+        if(Array.isArray(data.jobs)){
+          jobs=data.jobs;
+        }
+
+        if(data.masters && typeof data.masters==="object"){
+          masters=data.masters;
+          normalizeMasters();
+        }
+
+        if(Array.isArray(data.supervisorData)){
+          supervisorData=data.supervisorData;
+        }
+
+        if(Array.isArray(data.employees)){
+          employees=data.employees;
+        }
+
+        if(Array.isArray(data.overtimeData)){
+          overtimeData=data.overtimeData;
+        }
+
+        /*
+          Keep localStorage backup also.
+        */
+
+        localStorage.setItem(
+          "hitra_users",
+          JSON.stringify(users)
+        );
+
+        localStorage.setItem(
+          "hitra_jobs",
+          JSON.stringify(jobs)
+        );
+
+        localStorage.setItem(
+          "hitra_masters",
+          JSON.stringify(masters)
+        );
+
+        localStorage.setItem(
+          "hitra_supervisor",
+          JSON.stringify(supervisorData)
+        );
+
+        localStorage.setItem(
+          "hitra_employees",
+          JSON.stringify(employees)
+        );
+
+        localStorage.setItem(
+          "hitra_overtime",
+          JSON.stringify(overtimeData)
+        );
+
+        cloudReady=true;
+        cloudHydrated=true;
+
+        /*
+          Refresh all screens so data entered on another
+          device appears automatically.
+        */
+
+        loadUI();
+        renderAll();
+        renderWarehouse();
+        renderSupervisor();
+        renderManager();
+        renderEmployees();
+        renderOvertime();
+
+      }catch(error){
+
+        console.error(
+          "HITRA Firebase Cloud Data Error:",
+          error
+        );
+
+      }finally{
+
+        cloudApplying=false;
+
+      }
+    },
+
+    error=>{
+
+      cloudReady=false;
+
+      console.error(
+        "HITRA Firebase Connection Error:",
+        error
+      );
+
+      setCloudStatus(
+        "☁ Cloud: Connection Error",
+        "offline"
+      );
+    }
+  );
+}
+
+
+/* Start Firebase listener */
+startCloudSync();
+
+
+function el(id){ return document.getElementById(id); }
+
+function val(id){
+  const e=el(id);
+  return e ? String(e.value || "").trim() : "";
+}
+
+function esc(x){
+  return String(x == null ? "" : x)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function attr(x){ return esc(x); }
+function idArg(id){ return encodeURIComponent(String(id)); }
+function decodeArg(x){ return decodeURIComponent(String(x)); }
+
+function setOpts(id, arr, all){
+  const e=el(id);
+  if(!e)return;
+
+  const oldValue=String(e.value||"");
+  const list=Array.isArray(arr)?arr:[];
+
+  e.innerHTML=(all?'<option value="">All</option>':"")+
+    list.map(x=>'<option value="'+attr(x)+'">'+esc(x)+'</option>').join("");
+
+  if(Array.from(e.options).some(o=>o.value===oldValue))
+    e.value=oldValue;
+  else if(all)
+    e.value="";
+}
+
+function login(){
+
+  const u=val("loginUser"),
+        p=el("loginPass")?el("loginPass").value:"",
+        r=val("loginRole");
+
+  const found=users.find(x=>
+    String(x.username)===u &&
+    String(x.password)===p &&
+    String(x.role)===r
+  );
+
+  if(!found){
+    el("loginError").textContent="Wrong Login ID, Password or Role.";
+    return;
+  }
+
+  el("loginError").textContent="";
+  currentUser=found;
+
+  el("loginPage").classList.add("hidden");
+  el("appHeader").classList.remove("hidden");
+
+  el("loggedUser").textContent=
+    found.username+" • "+String(found.role).toUpperCase();
+
+  hidePages();
+
+  if(r==="csr"){
+    el("csrPage").classList.add("active");
+    loadUI();
+    clearOffice();
+    renderAll();
+
+  }else if(r==="warehouse"){
+
+    el("warehousePage").classList.add("active");
+    renderWarehouse();
+
+  }else if(r==="supervisor"){
+
+    el("supervisorPage").classList.add("active");
+    renderSupervisor();
+    renderEmployees();
+    renderOvertime();
+
+  }else{
+
+    el("managerPage").classList.add("active");
+    renderManager();
+  }
+}
+
+function hidePages(){
+  document.querySelectorAll(".page")
+    .forEach(e=>e.classList.remove("active"));
+}
+
+function logout(){
+
+  currentUser=null;
+  editingId=null;
+
+  hidePages();
+
+  el("appHeader").classList.add("hidden");
+  el("loginPage").classList.remove("hidden");
+
+  el("loginUser").value="";
+  el("loginPass").value="";
+  el("loginRole").value="";
+  el("loginError").textContent="";
+}
+
+function openAdmin(){
+
+  el("adminModal").classList.add("show");
+
+  el("adminLoginBox").classList.remove("hidden");
+  el("adminPanelBox").classList.add("hidden");
+
+  el("adminUser").value="";
+  el("adminPass").value="";
+}
+
+function closeAdmin(){
+  el("adminModal").classList.remove("show");
+}
+
+function adminLogin(){
+
+  if(
+    val("adminUser")===ADMIN_USER &&
+    (el("adminPass").value||"")===ADMIN_PASS
+  ){
+
+    el("adminLoginBox").classList.add("hidden");
+    el("adminPanelBox").classList.remove("hidden");
+
+    renderUsers();
+
+  }else{
+
+    alert("Invalid Admin Login");
+  }
+}
+
+function createUser(){
+
+  const u=val("newUser"),
+        p=el("newPass").value||"",
+        r=val("newRole");
+
+  if(!u||!p)
+    return alert("Enter Login ID and Password");
+
+  if(users.some(x=>
+    String(x.username).toLowerCase()===u.toLowerCase()
+  ))
+    return alert("Login ID already exists");
+
+  users.push({
+    username:u,
+    password:p,
+    role:r
+  });
+
+  db();
+  renderUsers();
+
+  el("newUser").value="";
+  el("newPass").value="";
+
+  alert("User created successfully");
+}
+
+function renderUsers(){
+
+  el("usersTable").innerHTML=users.map((u,i)=>
+    '<tr><td>'+esc(u.username)+'</td><td>'+
+    esc(u.role)+'</td><td>'+
+    '<button class="btn btn-red" onclick="deleteUser('+i+')">Delete</button>'+
+    '</td></tr>'
+  ).join("");
+}
+
+function deleteUser(i){
+
+  if(!users[i])return;
+
+  if(confirm("Delete user "+users[i].username+"?")){
+
+    users.splice(i,1);
+
+    db();
+    renderUsers();
+  }
+}
+
+function showOffice(n,b){
+
+  document.querySelectorAll("#csrPage .section")
+    .forEach(e=>e.classList.remove("active"));
+
+  const target=
+    el("office"+n.charAt(0).toUpperCase()+n.slice(1));
+
+  if(target)
+    target.classList.add("active");
+
+  document.querySelectorAll("#csrPage .tab")
+    .forEach(e=>e.classList.remove("active"));
+
+  if(b)b.classList.add("active");
+
+  loadUI();
+
+  if(n==="dashboard")renderAll();
+  if(n==="masters")renderMasters();
+}
+
+function showOfficeByName(n){
+
+  const tabs=document.querySelectorAll("#csrPage .tab");
+
+  showOffice(
+    n,
+    tabs[n==="dashboard"?0:n==="entry"?1:2]
+  );
+}
+
+function loadUI(){
+
+  if(!Array.isArray(masters.dgclass)||!masters.dgclass.length)
+    masters.dgclass=[
+      "Class 2",
+      "Class 3",
+      "Class 4",
+      "Class 8",
+      "Class 9"
+    ];
+
+  setOpts("eCustomer",masters.customers);
+  setOpts("eUom",masters.uoms);
+  setOpts("eVehicle",masters.vehicles);
+  setOpts("eStatus",masters.statuses);
+
+  const eDg=el("eDg"),
+        oldEDg=eDg?eDg.value:"";
+
+  if(eDg){
+
+    eDg.innerHTML=
+      '<option value="DG">DG</option>'+
+      '<option value="Non-DG">Non-DG</option>';
+
+    eDg.value=
+      (oldEDg==="DG"||oldEDg==="Non-DG")
+      ?oldEDg:"";
+  }
+
+  setOpts("eDgClass",masters.dgclass);
+  setOpts("eVas",masters.vas);
+  setOpts("eDock",masters.docks);
+
+  setOpts("fCustomer",masters.customers,true);
+  setOpts("fVehicleType",masters.vehicles,true);
+  setOpts("fStatus",masters.statuses,true);
+  setOpts("fUom",masters.uoms,true);
+
+  const fDg=el("fDg"),
+        oldFDg=fDg?fDg.value:"";
+
+  if(fDg){
+
+    fDg.innerHTML=
+      '<option value="">All</option>'+
+      '<option value="DG">DG</option>'+
+      '<option value="Non-DG">Non-DG</option>';
+
+    fDg.value=
+      (oldFDg==="DG"||oldFDg==="Non-DG")
+      ?oldFDg:"";
+  }
+
+  setOpts("fDgClass",masters.dgclass,true);
+  setOpts("fCsr",masters.csrs,true);
+  setOpts("fDock",masters.docks,true);
+  setOpts("fType",["Inbound","Outbound"],true);
+
+  if(currentUser && !val("eCsr"))
+    el("eCsr").value=currentUser.username;
+
+  toggleDgClass();
+}
+
+function toggleDgClass(){
+
+  const dg=val("eDg"),
+        select=el("eDgClass");
+
+  if(!select)return;
+
+  const list=
+    (Array.isArray(masters.dgclass)
+    ?masters.dgclass:[]).filter(Boolean);
+
+  const old=String(select.value||"");
+
+  select.innerHTML=
+    '<option value="">Select DG Class</option>'+
+    list.map(x=>
+      '<option value="'+attr(x)+'">'+esc(x)+'</option>'
+    ).join("");
+
+  const enabled=dg==="DG";
+
+  select.disabled=!enabled;
+  select.style.opacity=enabled?"1":".55";
+
+  if(enabled){
+
+    if(list.includes(old))
+      select.value=old;
+    else if(list.length)
+      select.value=list[0];
+
+  }else{
+
+    select.value="";
+  }
+}
+
+function addMasters(){
+
+  const map=[
+    ["mCustomer","customers"],
+    ["mUom","uoms"],
+    ["mCsr","csrs"],
+    ["mDg","dg"],
+    ["mStatus","statuses"],
+    ["mVas","vas"],
+    ["mVehicle","vehicles"],
+    ["mTally","tallies"],
+    ["mDock","docks"]
+  ];
+
+  let added=0;
+
+  map.forEach(pair=>{
+
+    const input=val(pair[0]),
+          key=pair[1];
+
+    if(
+      input &&
+      !masters[key].some(x=>
+        String(x).toLowerCase()===input.toLowerCase()
+      )
+    ){
+
+      masters[key].push(input);
+      el(pair[0]).value="";
+      added++;
+    }
+  });
+
+  if(added){
+
+    db();
+    loadUI();
+    renderMasters();
+
+    alert(added+" master value(s) added successfully");
+
+  }else{
+
+    alert("Enter at least one new master value");
+  }
+}
+
+function renderMasters(){
+
+  const labels={
+    customers:"Customer",
+    uoms:"UOM",
+    csrs:"CSR",
+    dg:"DG / Non-DG",
+    dgclass:"DG Class",
+    statuses:"Status",
+    vas:"VAS Activity",
+    vehicles:"Vehicle Type",
+    tallies:"Tally Name",
+    docks:"Dock"
+  };
+
+  const rows=[];
+
+  Object.keys(labels).forEach(k=>{
+
+    (masters[k]||[]).forEach((x,i)=>{
+
+      rows.push(
+        '<tr><td>'+labels[k]+'</td><td>'+
+        esc(x)+'</td><td>'+
+        '<button class="btn btn-red" onclick="deleteMaster(\''+
+        k+'\','+i+')">Delete</button>'+
+        '</td></tr>'
+      );
+    });
+  });
+
+  el("masterTable").innerHTML=
+    rows.join("") ||
+    '<tr><td colspan="3">No master values</td></tr>';
+}
+
+function deleteMaster(k,i){
+
+  if(!masters[k]||masters[k][i]==null)return;
+
+  if(confirm("Delete this "+k+" value?")){
+
+    masters[k].splice(i,1);
+
+    db();
+    loadUI();
+    renderMasters();
+    renderAll();
+  }
+}
+
+function clearOffice(){
+
+  editingId=null;
+
+  [
+    "eDate",
+    "eJob",
+    "eQty",
+    "eVehicleNumber",
+    "eEstDate",
+    "eRequested",
+    "eGateIn",
+    "eGateOut",
+    "eRemarks"
+  ].forEach(x=>{
+    if(el(x))el(x).value="";
+  });
+
+  if(el("eCsr"))
+    el("eCsr").value=
+      currentUser?currentUser.username:"";
+
+  if(el("eType"))
+    el("eType").value="Inbound";
+
+  if(el("eStatus"))
+    el("eStatus").value=
+      masters.statuses[0]||"Pending";
+
+  if(el("eDg"))
+    el("eDg").value="Non-DG";
+
+  if(el("eCustoms"))
+    el("eCustoms").value="No";
+
+  if(el("eTransport"))
+    el("eTransport").value="No";
+
+  if(el("eOvertime"))
+    el("eOvertime").value="No";
+
+  toggleDgClass();
+}
+
+function entryData(){
+
+  const old=
+    editingId
+    ?jobs.find(x=>String(x.id)===String(editingId))
+    :null;
+
+  return{
+
+    id:
+      editingId ||
+      ("JOB-"+Date.now()+"-"+
+       Math.random().toString(36).slice(2,7)),
+
+    dateOfJob:val("eDate"),
+    jobNumber:val("eJob"),
+    type:val("eType"),
+    customer:val("eCustomer"),
+    csr:val("eCsr"),
+
+    qty:Number(val("eQty"))||0,
+
+    uom:val("eUom"),
+    vehicle:val("eVehicle"),
+    vehicleNumber:val("eVehicleNumber"),
+    status:val("eStatus"),
+
+    estimatedShipmentDate:val("eEstDate"),
+    requestedTime:val("eRequested"),
+
+    customs:val("eCustoms"),
+    transportation:val("eTransport"),
+    vas:val("eVas"),
+
+    gateIn:val("eGateIn"),
+    gateOut:val("eGateOut"),
+
+    overtime:val("eOvertime"),
+    remarks:val("eRemarks"),
+
+    dg:val("eDg"),
+    dgClass:
+      val("eDg")==="DG"
+      ?val("eDgClass")
+      :"",
+
+    dock:val("eDock"),
+
+    sent:old?!!old.sent:false,
+    warehousePosted:old?!!old.warehousePosted:false,
+
+    approvedTime:old?.approvedTime||"",
+    arrivalDate:old?.arrivalDate||"",
+    reportingTime:old?.reportingTime||"",
+    dispatchTime:old?.dispatchTime||"",
+
+    labellingStatus:old?.labellingStatus||"No",
+    assignedTally:old?.assignedTally||"",
+
+    workerNos:old?.workerNos||"",
+    hours:old?.hours||"",
+    tallyNos:old?.tallyNos||"",
+    damages:old?.damages||""
+  };
+}
+
+function saveOffice(action){
+
+  const d=entryData();
+
+  if(!d.jobNumber||!d.customer)
+    return alert("Job Number and Customer are required");
+
+  if(d.dg==="DG"&&!d.dgClass)
+    return alert("Please select a DG Class");
+
+  if(editingId){
+
+    const i=jobs.findIndex(x=>
+      String(x.id)===String(editingId)
+    );
+
+    if(i<0)
+      return alert("Entry not found");
+
+    const old=jobs[i];
+
+    jobs[i]=Object.assign(
+      {},
+      old,
+      d,
+      {
+        id:old.id,
+        sent:
+          action==="Sent"
+          ?true
+          :!!old.sent
+      }
+    );
+
+  }else{
+
+    d.sent=action==="Sent";
+    d.warehousePosted=false;
+
+    d.approvedTime="";
+    d.arrivalDate="";
+    d.reportingTime="";
+    d.dispatchTime="";
+
+    d.labellingStatus="No";
+    d.assignedTally="";
+
+    d.workerNos="";
+    d.hours="";
+    d.tallyNos="";
+    d.damages="";
+
+    jobs.push(d);
+  }
+
+  db();
+
+  alert(
+    action==="Sent"
+    ?"Job sent to Warehouse and Supervisor"
+    :"Entry saved successfully"
+  );
+
+  clearOffice();
+  loadUI();
+  renderAll();
+}
+
+function editOffice(encodedId){
+
+  const id=decodeArg(encodedId),
+        j=jobs.find(x=>String(x.id)===String(id));
+
+  if(!j)
+    return alert("Entry not found");
+
+  editingId=j.id;
+
+  const pairs=[
+    ["dateOfJob","eDate"],
+    ["jobNumber","eJob"],
+    ["customer","eCustomer"],
+    ["csr","eCsr"],
+    ["qty","eQty"],
+    ["uom","eUom"],
+    ["vehicle","eVehicle"],
+    ["vehicleNumber","eVehicleNumber"],
+    ["status","eStatus"],
+    ["estimatedShipmentDate","eEstDate"],
+    ["requestedTime","eRequested"],
+    ["dg","eDg"],
+    ["dgClass","eDgClass"],
+    ["dock","eDock"],
+    ["customs","eCustoms"],
+    ["transportation","eTransport"],
+    ["vas","eVas"],
+    ["gateIn","eGateIn"],
+    ["gateOut","eGateOut"],
+    ["overtime","eOvertime"],
+    ["remarks","eRemarks"]
+  ];
+
+  loadUI();
+
+  pairs.forEach(p=>{
+    if(el(p[1]))
+      el(p[1]).value=
+        j[p[0]]==null
+        ?""
+        :j[p[0]];
+  });
+
+  toggleDgClass();
+
+  showOfficeByName("entry");
+}
+
+function deleteOffice(encodedId){
+
+  const id=decodeArg(encodedId),
+        j=jobs.find(x=>String(x.id)===String(id));
+
+  if(!j)
+    return alert("Entry not found");
+
+  if(confirm("Delete job "+(j.jobNumber||id)+"?")){
+
+    jobs=jobs.filter(x=>
+      String(x.id)!==String(id)
+    );
+
+    supervisorData=
+      supervisorData.filter(x=>
+        String(x.jobId||"")!==String(id) &&
+        String(x.jobNumber)!==
+        String(j.jobNumber)
+      );
+
+    db();
+
+    renderAll();
+    renderSupervisor();
+    renderManager();
+    renderWarehouse();
+  }
+}
+
+function clearDashboardFilters(){
+
+  [
+    "fDateFrom",
+    "fDateTo",
+    "fVehicleNumber",
+    "fCustomer",
+    "fVehicleType",
+    "fStatus",
+    "fUom",
+    "fDg",
+    "fDgClass",
+    "fCsr",
+    "fDock",
+    "fType"
+  ].forEach(id=>{
+    const e=el(id);
+    if(e)e.value="";
+  });
+
+  renderAll();
+}
+
+function normalizeType(x){
+
+  const s=String(x==null?"":x)
+    .trim()
+    .toLowerCase();
+
+  if(s==="inbound")return "Inbound";
+  if(s==="outbound")return "Outbound";
+
+  return String(x==null?"":x).trim();
+}
+
+function normalizeDg(x){
+
+  const s=String(x==null?"":x)
+    .trim()
+    .toLowerCase();
+
+  if(s==="dg")return "DG";
+
+  if(
+    s==="non-dg" ||
+    s==="non dg" ||
+    s==="nondg"
+  )
+    return "Non-DG";
+
+  return String(x==null?"":x).trim();
+}
+
+function filteredJobs(){
+
+  const df=val("fDateFrom"),
+        dt=val("fDateTo"),
+        vn=val("fVehicleNumber").toLowerCase();
+
+  const filters=[
+    ["fCustomer","customer"],
+    ["fVehicleType","vehicle"],
+    ["fStatus","status"],
+    ["fUom","uom"],
+    ["fDg","dg"],
+    ["fDgClass","dgClass"],
+    ["fCsr","csr"],
+    ["fDock","dock"],
+    ["fType","type"]
+  ];
+
+  return jobs.filter(j=>{
+
+    const jd=String(j.dateOfJob||"");
+
+    if(df&&jd<df)return false;
+    if(dt&&jd>dt)return false;
+
+    if(
+      vn &&
+      !String(j.vehicleNumber||"")
+      .toLowerCase()
+      .includes(vn)
+    )
+      return false;
+
+    for(const [id,key] of filters){
+
+      const q=val(id);
+
+      if(!q)continue;
+
+      let actual=j[key];
+
+      if(key==="type")
+        actual=normalizeType(actual);
+
+      if(key==="dg")
+        actual=normalizeDg(actual);
+
+      if(
+        String(actual==null?"":actual)!==q
+      )
+        return false;
+    }
+
+    return true;
+  });
+}
+
+function parseTimeMinutes(t){
+
+  const m=String(t||"")
+    .match(/^(\d{1,2}):(\d{2})$/);
+
+  if(!m)return null;
+
+  const h=Number(m[1]),
+        min=Number(m[2]);
+
+  if(h>23||min>59)return null;
+
+  return h*60+min;
+}
+
+function hoursBetween(timeA,timeB){
+
+  const a=parseTimeMinutes(timeA),
+        b=parseTimeMinutes(timeB);
+
+  if(a==null||b==null)return null;
+
+  let mins=b-a;
+
+  if(mins<0)mins+=1440;
+
+  if(mins<0||mins>1440)return null;
+
+  return mins/60;
+}
+
+function avgTypeHours(a,type){
+
+  const rows=a.filter(j=>
+    normalizeType(j.type)===type &&
+    j.reportingTime &&
+    j.dispatchTime
+  );
+
+  const vals=rows
+    .map(j=>
+      hoursBetween(
+        j.reportingTime,
+        j.dispatchTime
+      )
+    )
+    .filter(x=>Number.isFinite(x));
+
+  return vals.length
+    ?(
+      vals.reduce((s,x)=>s+x,0)/
+      vals.length
+    ).toFixed(2)
+    :"0.00";
+}
+
+function renderAll(){
+
+  loadUI();
+
+  const a=filteredJobs();
+
+  const customers=
+    new Set(
+      a.map(x=>
+        String(x.customer||"")
+        .trim()
+        .toLowerCase()
+      ).filter(Boolean)
+    );
+
+  const qty=
+    a.reduce(
+      (s,x)=>
+        s+
+        (
+          Number.isFinite(Number(x.qty))
+          ?Number(x.qty)
+          :0
+        ),
+      0
+    );
+
+  const inbound=
+    a.filter(x=>
+      normalizeType(x.type)==="Inbound"
+    ).length;
+
+  const outbound=
+    a.filter(x=>
+      normalizeType(x.type)==="Outbound"
+    ).length;
+
+  if(el("kCustomerNew"))
+    el("kCustomerNew").textContent=
+      customers.size;
+
+  if(el("kQtyNew"))
+    el("kQtyNew").textContent=
+      Number(qty.toFixed(2));
+
+  if(el("kInboundNew"))
+    el("kInboundNew").textContent=inbound;
+
+  if(el("kOutboundNew"))
+    el("kOutboundNew").textContent=outbound;
+
+  if(el("kLoadingNew"))
+    el("kLoadingNew").textContent=
+      avgTypeHours(a,"Outbound")+" h";
+
+  if(el("kOffloadingNew"))
+    el("kOffloadingNew").textContent=
+      avgTypeHours(a,"Inbound")+" h";
+
+  renderCharts(a);
+  renderOfficeTable(a);
+  renderMini();
+}
+
+function renderCharts(a){
+
+  const dg=
+    a.filter(x=>
+      normalizeDg(x.dg)==="DG"
+    ).length;
+
+  const non=
+    a.filter(x=>
+      normalizeDg(x.dg)!=="DG"
+    ).length;
+
+  const ip=
+    a.filter(x=>
+      normalizeType(x.type)==="Inbound"
+    ).length;
+
+  const op=
+    a.filter(x=>
+      normalizeType(x.type)==="Outbound"
+    ).length;
+
+  const totalD=dg+non,
+        totalT=ip+op;
+
+  const dp=totalD?dg/totalD*100:0,
+        tp=totalT?ip/totalT*100:0;
+
+  const dd=el("dgDonut"),
+        td=el("typeDonut");
+
+  dd.style.background=
+    totalD
+    ?"conic-gradient(#c85a63 0 "+dp+"%,#e7a8ad "+dp+"% 100%)"
+    :"#f3e3e5";
+
+  td.style.background=
+    totalT
+    ?"conic-gradient(#c85a63 0 "+tp+"%,#e7a8ad "+tp+"% 100%)"
+    :"#f3e3e5";
+
+  el("dgText").textContent=
+    dg+" / "+non;
+
+  el("typeText").textContent=
+    ip+" / "+op;
+
+  el("dgBtnDG").textContent=
+    "DG: "+dg;
+
+  el("dgBtnNon").textContent=
+    "Non-DG: "+non;
+
+  el("typeBtnIn").textContent=
+    "Inbound: "+ip;
+
+  el("typeBtnOut").textContent=
+    "Outbound: "+op;
+
+  dd.onclick=()=>
+    toggleDashboardFilter(
+      "fDg",
+      ["DG","Non-DG"]
+    );
+
+  td.onclick=()=>
+    toggleDashboardFilter(
+      "fType",
+      ["Inbound","Outbound"]
+    );
+
+  const d={};
+
+  a.forEach(x=>{
+
+    const k=
+      String(x.dock||"No Dock").trim()||
+      "No Dock";
+
+    d[k]=
+      (d[k]||0)+
+      (
+        Number.isFinite(Number(x.qty))
+        ?Number(x.qty)
+        :0
+      );
+  });
+
+  const entries=Object.entries(d),
+        max=
+          entries.length
+          ?Math.max(
+             ...entries.map(x=>x[1]),
+             1
+           )
+          :1;
+
+  el("dockChart").innerHTML=
+    entries.map(([k,num])=>
+
+      '<div class="bar-item clickable" title="Click to filter '+esc(k)+'" onclick="dockClick(event,\''+idArg(k)+'\')">'+
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">'+
+      '<div class="bar" style="height:'+Math.max(4,num/max*165)+'px"></div>'+
+      '<div class="bar-label">'+
+      esc(k)+'<br>'+esc(num)+
+      '</div></div></div>'
+
+    ).join("") ||
+    '<div class="small">No data for selected filters</div>';
+
+  const dgVal=val("fDg"),
+        typeVal=val("fType"),
+        dockVal=val("fDock");
+
+  el("dgBtnDG").classList.toggle(
+    "active",
+    dgVal==="DG"
+  );
+
+  el("dgBtnNon").classList.toggle(
+    "active",
+    dgVal==="Non-DG"
+  );
+
+  el("typeBtnIn").classList.toggle(
+    "active",
+    typeVal==="Inbound"
+  );
+
+  el("typeBtnOut").classList.toggle(
+    "active",
+    typeVal==="Outbound"
+  );
+
+  el("chartDock").classList.toggle(
+    "selected-chart",
+    !!dockVal
+  );
+}
+
+function setDashboardFilter(id,value){
+
+  const e=el(id);
+  if(!e)return;
+
+  e.value=
+    e.value===value
+    ?""
+    :value;
+
+  renderAll();
+}
+
+function toggleDashboardFilter(id,values){
+
+  const e=el(id);
+  if(!e)return;
+
+  const cur=e.value,
+        idx=values.indexOf(cur);
+
+  e.value=
+    idx<0
+    ?values[0]
+    :(values[(idx+1)%values.length]||"");
+
+  renderAll();
+}
+
+function kpiTypeFilter(type){
+  setDashboardFilter("fType",type);
+}
+
+function chartSegment(type,segment){
+  setDashboardFilter(
+    type==="dg"?"fDg":"fType",
+    segment
+  );
+}
+
+function chartFilter(type){
+
+  if(type==="dg")
+    toggleDashboardFilter(
+      "fDg",
+      ["DG","Non-DG"]
+    );
+
+  else if(type==="type")
+    toggleDashboardFilter(
+      "fType",
+      ["Inbound","Outbound"]
+    );
+
+  else if(type==="dock"){
+
+    const e=el("fDock");
+    e.value="";
+    renderAll();
+  }
+}
+
+function dockClick(ev,encodedDock){
+
+  if(ev)ev.stopPropagation();
+
+  const e=el("fDock");
+
+  if(!e)return;
+
+  const d=decodeArg(encodedDock);
+
+  e.value=
+    e.value===d
+    ?""
+    :d;
+
+  renderAll();
+}
+
+function chartSegment(type,segment){
+
+  const id=
+    type==="dg"
+    ?"fDg"
+    :"fType";
+
+  const e=el(id);
+
+  if(!e)return;
+
+  e.value=
+    e.value===segment
+    ?""
+    :segment;
+
+  renderAll();
+}
+
+function chartFilter(type){
+
+  if(type==="dg"){
+
+    const e=el("fDg");
+
+    e.value=
+      e.value==="DG"
+      ?""
+      :e.value==="Non-DG"
+      ?"DG"
+      :"DG";
+
+  }else if(type==="type"){
+
+    const e=el("fType");
+
+    e.value=
+      e.value==="Inbound"
+      ?"Outbound"
+      :e.value==="Outbound"
+      ?""
+      :"Inbound";
+  }
+
+  renderAll();
+}
+
+function dockClick(ev,encodedDock){
+
+  if(ev)ev.stopPropagation();
+
+  const e=el("fDock"),
+        d=decodeArg(encodedDock);
+
+  e.value=
+    e.value===d
+    ?""
+    :d;
+
+  renderAll();
+}
+
+function renderOfficeTable(a){
+
+  el("officeTable").innerHTML=
+    a.map(j=>
+
+      '<tr>'+
+      '<td>'+esc(j.dateOfJob)+'</td>'+
+      '<td>'+esc(j.jobNumber)+'</td>'+
+      '<td>'+esc(j.type)+'</td>'+
+      '<td>'+esc(j.customer)+'</td>'+
+      '<td>'+esc(j.csr)+'</td>'+
+      '<td>'+esc(j.qty)+'</td>'+
+      '<td>'+esc(j.uom)+'</td>'+
+      '<td>'+esc(j.vehicle)+'</td>'+
+      '<td>'+esc(j.vehicleNumber)+'</td>'+
+      '<td><span class="status '+
+      esc(String(j.status||"").toLowerCase())+
+      '">'+esc(j.status)+'</span></td>'+
+      '<td>'+esc(j.assignedTally)+'</td>'+
+      '<td>'+esc(j.estimatedShipmentDate)+'</td>'+
+      '<td>'+esc(j.requestedTime)+'</td>'+
+      '<td>'+esc(j.approvedTime)+'</td>'+
+      '<td>'+esc(j.arrivalDate)+'</td>'+
+      '<td>'+esc(j.reportingTime)+'</td>'+
+      '<td>'+esc(j.dispatchTime)+'</td>'+
+      '<td>'+esc(j.labellingStatus)+'</td>'+
+      '<td>'+esc(j.customs)+'</td>'+
+      '<td>'+esc(j.transportation)+'</td>'+
+      '<td>'+esc(j.vas)+'</td>'+
+      '<td>'+esc(j.remarks)+'</td>'+
+      '<td><button class="btn btn-blue" onclick="editOffice(\''+
+      idArg(j.id)+
+      '\')">Edit</button></td>'+
+      '</tr>'
+
+    ).join("") ||
+    '<tr><td colspan="23">No jobs found</td></tr>';
+}
+
+function renderMini(){
+
+  el("officeMiniTable").innerHTML=
+    jobs.map(j=>
+
+      '<tr>'+
+      '<td>'+esc(j.jobNumber)+'</td>'+
+      '<td>'+esc(j.customer)+'</td>'+
+      '<td>'+esc(j.type)+'</td>'+
+      '<td>'+esc(j.qty)+'</td>'+
+      '<td>'+esc(j.status)+'</td>'+
+      '<td>'+esc(j.csr)+'</td>'+
+      '<td>'+((j.sent)?"Yes":"No")+'</td>'+
+      '<td><button class="btn btn-blue" onclick="editOffice(\''+
+      idArg(j.id)+
+      '\')">Edit</button></td>'+
+      '<td><button class="btn btn-red" onclick="deleteOffice(\''+
+      idArg(j.id)+
+      '\')">Delete</button></td>'+
+      '</tr>'
+
+    ).join("") ||
+    '<tr><td colspan="9">No office entries</td></tr>';
+}
+
+function renderWarehouse(){
+
+  const a=
+    jobs.filter(j=>
+      j.sent &&
+      !j.warehousePosted
+    );
+
+  el("warehouseTable").innerHTML=
+    a.map(j=>
+
+      '<tr>'+
+      '<td>'+esc(j.jobNumber)+'</td>'+
+      '<td>'+esc(j.customer)+'</td>'+
+      '<td>'+esc(j.type)+'</td>'+
+      '<td>'+esc(j.qty)+'</td>'+
+      '<td>'+esc(j.vehicle)+'</td>'+
+      '<td><input id="tally_'+
+      esc(j.id)+
+      '" value="'+
+      attr(j.assignedTally||"")+
+      '"></td>'+
+      '<td><input id="approved_'+
+      esc(j.id)+
+      '" type="time" value="'+
+      attr(j.approvedTime||"")+
+      '"></td>'+
+      '<td><input id="arrival_'+
+      esc(j.id)+
+      '" type="date" value="'+
+      attr(j.arrivalDate||"")+
+      '"></td>'+
+      '<td><input id="report_'+
+      esc(j.id)+
+      '" type="time" value="'+
+      attr(j.reportingTime||"")+
+      '"></td>'+
+      '<td><input id="dispatch_'+
+      esc(j.id)+
+      '" type="time" value="'+
+      attr(j.dispatchTime||"")+
+      '"></td>'+
+      '<td><select id="label_'+
+      esc(j.id)+
+      '"><option>Planned</option><option>In Progress</option><option>Completed</option><option>No</option></select></td>'+
+      '<td>'+
+      '<button class="btn btn-gray" onclick="warehouseUpdate(\''+
+      idArg(j.id)+
+      '\',\'save\')">Save</button> '+
+      '<button class="btn btn-blue" onclick="warehouseUpdate(\''+
+      idArg(j.id)+
+      '\',\'send\')">Send</button> '+
+      '<button class="btn btn-green" onclick="warehouseUpdate(\''+
+      idArg(j.id)+
+      '\',\'post\')">Post</button>'+
+      '</td>'+
+      '</tr>'
+
+    ).join("") ||
+    '<tr><td colspan="12">No jobs waiting from Office</td></tr>';
+
+  a.forEach(j=>{
+
+    const t=el("tally_"+j.id);
+
+    if(t&&!j.assignedTally)
+      t.value=
+        currentUser
+        ?currentUser.username
+        :"";
+
+    const l=el("label_"+j.id);
+
+    if(l)
+      l.value=
+        j.labellingStatus||"No";
+  });
+}
+
+function warehouseUpdate(encodedId,action){
+
+  const id=decodeArg(encodedId),
+        j=jobs.find(x=>
+          String(x.id)===String(id)
+        );
+
+  if(!j)
+    return alert("Job not found");
+
+  const get=k=>
+    el(k+"_"+j.id)
+    ?el(k+"_"+j.id).value
+    :"";
+
+  j.assignedTally=
+    get("tally") ||
+    (currentUser?currentUser.username:"");
+
+  j.approvedTime=get("approved");
+  j.arrivalDate=get("arrival");
+  j.reportingTime=get("report");
+  j.dispatchTime=get("dispatch");
+
+  j.labellingStatus=
+    get("label")||"No";
+
+  if(j.reportingTime)
+    j.status="Running";
+
+  if(j.dispatchTime)
+    j.status="Complete";
+
+  if(action==="post")
+    j.warehousePosted=true;
+
+  db();
+
+  alert(
+    action==="post"
+    ?"Posted to Office. Job removed from Warehouse working list."
+    :"Warehouse data saved successfully"
+  );
+
+  renderWarehouse();
+  renderAll();
+  renderSupervisor();
+  renderManager();
+}
+
+function supervisorSavedKey(x){
+
+  return x&&x.jobId!=null&&
+    String(x.jobId)!==""
+    ?"id:"+String(x.jobId)
+    :"job:"+
+      String(x&&x.jobNumber||"")
+      .trim()
+      .toLowerCase();
+}
+
+function renderSupervisor(){
+
+  const savedIds=
+    new Set(
+      supervisorData
+      .map(x=>String(x&&x.jobId||""))
+      .filter(Boolean)
+    );
+
+  const savedJobs=
+    new Set(
+      supervisorData
+      .map(x=>
+        String(x&&x.jobNumber||"")
+        .trim()
+        .toLowerCase()
+      )
+      .filter(Boolean)
+    );
+
+  const active=
+    jobs.filter(j=>
+      j.sent &&
+      !savedIds.has(String(j.id)) &&
+      !savedJobs.has(
+        String(j.jobNumber||"")
+        .trim()
+        .toLowerCase()
+      )
+    );
+
+  el("supervisorTable").innerHTML=
+    active.map(j=>
+
+      '<tr>'+
+      '<td>'+esc(j.jobNumber)+'</td>'+
+      '<td>'+esc(normalizeType(j.type))+'</td>'+
+      '<td>'+esc(j.customer)+'</td>'+
+      '<td>'+esc(j.csr)+'</td>'+
+      '<td>'+esc(j.approvedTime)+'</td>'+
+      '<td>'+esc(j.dispatchTime)+'</td>'+
+      '<td><input id="worker_'+
+      attr(j.id)+
+      '" value="'+
+      attr(j.workerNos||"")+
+      '"></td>'+
+      '<td><input id="hours_'+
+      attr(j.id)+
+      '" type="number" min="0" step="0.01" value="'+
+      attr(j.hours||"")+
+      '"></td>'+
+      '<td><input id="tallys_'+
+      attr(j.id)+
+      '" value="'+
+      attr(j.tallyNos||"")+
+      '"></td>'+
+      '<td><input id="remarks_'+
+      attr(j.id)+
+      '" value="'+
+      attr(j.remarks||"")+
+      '"></td>'+
+      '<td><input id="damage_'+
+      attr(j.id)+
+      '" value="'+
+      attr(j.damages||"")+
+      '"></td>'+
+      '<td><button class="btn btn-green" onclick="saveSupervisor(\''+
+      idArg(j.id)+
+      '\')">Save</button></td>'+
+      '</tr>'
+
+    ).join("") ||
+    '<tr><td colspan="12">No unsaved Supervisor jobs</td></tr>';
+
+  el("supervisorSaved").innerHTML=
+    supervisorData.map((x,i)=>
+
+      '<tr>'+
+      '<td>'+esc(x.jobNumber)+'</td>'+
+      '<td>'+esc(normalizeType(x.type))+'</td>'+
+      '<td>'+esc(x.customer)+'</td>'+
+      '<td>'+esc(x.csr)+'</td>'+
+      '<td>'+esc(x.approvedTime)+'</td>'+
+      '<td>'+esc(x.dispatchTime)+'</td>'+
+      '<td>'+esc(x.workerNos)+'</td>'+
+      '<td>'+esc(x.hours)+'</td>'+
+      '<td>'+esc(x.tallyNos)+'</td>'+
+      '<td>'+esc(x.remarks)+'</td>'+
+      '<td>'+esc(x.damages)+'</td>'+
+      '<td><button class="btn btn-blue" onclick="editSupervisorSaved('+
+      i+
+      ')">Edit</button></td>'+
+      '</tr>'
+
+    ).join("") ||
+    '<tr><td colspan="12">No Supervisor data saved yet</td></tr>';
+}
+
+function saveSupervisor(encodedId){
+
+  const id=decodeArg(encodedId),
+        j=jobs.find(x=>
+          String(x.id)===String(id)
+        );
+
+  if(!j)
+    return alert("Job not found");
+
+  const row={
+    jobId:j.id,
+    jobNumber:j.jobNumber,
+    type:normalizeType(j.type),
+    customer:j.customer,
+    csr:j.csr,
+    approvedTime:j.approvedTime||"",
+    dispatchTime:j.dispatchTime||"",
+    workerNos:val("worker_"+j.id),
+    hours:val("hours_"+j.id),
+    tallyNos:val("tallys_"+j.id),
+    remarks:val("remarks_"+j.id),
+    damages:val("damage_"+j.id)
+  };
+
+  j.workerNos=row.workerNos;
+  j.hours=row.hours;
+  j.tallyNos=row.tallyNos;
+  j.remarks=row.remarks;
+  j.damages=row.damages;
+
+  const i=
+    supervisorData.findIndex(x=>
+      String(x.jobId||"")===String(j.id) ||
+      (
+        !x.jobId &&
+        String(x.jobNumber||"")
+        .trim()
+        .toLowerCase()===
+        String(j.jobNumber||"")
+        .trim()
+        .toLowerCase()
+      )
+    );
+
+  if(i>=0)
+    supervisorData[i]=row;
+  else
+    supervisorData.push(row);
+
+  db();
+
+  renderSupervisor();
+  renderManager();
+
+  alert(
+    "Supervisor entry saved. It moved to Saved / Excel Data."
+  );
+}
+
+function editSupervisorSaved(index){
+
+  const x=supervisorData[index];
+
+  if(!x)
+    return alert("Saved entry not found");
+
+  el("seJob").value=x.jobNumber||"";
+  el("seType").value=x.type||"";
+  el("seCustomer").value=x.customer||"";
+  el("seCsr").value=x.csr||"";
+
+  el("seApproved").value=
+    x.approvedTime||"";
+
+  el("seDispatch").value=
+    x.dispatchTime||"";
+
+  el("seWorkers").value=
+    x.workerNos||"";
+
+  el("seHours").value=
+    x.hours||"";
+
+  el("seTally").value=
+    x.tallyNos||"";
+
+  el("seRemarks").value=
+    x.remarks||"";
+
+  el("seDamages").value=
+    x.damages||"";
+
+  el("supervisorEditModal").dataset.index=
+    String(index);
+
+  el("supervisorEditModal")
+    .classList.add("show");
+}
+
+function closeSupervisorEdit(){
+
+  el("supervisorEditModal")
+    .classList.remove("show");
+
+  delete el("supervisorEditModal")
+    .dataset.index;
+}
+
+function saveSupervisorEdit(){
+
+  const modal=el("supervisorEditModal"),
+        index=Number(modal.dataset.index);
+
+  if(
+    !Number.isInteger(index)||
+    !supervisorData[index]
+  )
+    return alert("Saved entry not found");
+
+  const x=supervisorData[index];
+
+  x.approvedTime=val("seApproved");
+  x.dispatchTime=val("seDispatch");
+  x.workerNos=val("seWorkers");
+  x.hours=val("seHours");
+  x.tallyNos=val("seTally");
+  x.remarks=val("seRemarks");
+  x.damages=val("seDamages");
+
+  const j=jobs.find(j=>
+    String(j.id)===String(x.jobId)
+  );
+
+  if(j){
+
+    j.approvedTime=x.approvedTime;
+    j.dispatchTime=x.dispatchTime;
+    j.workerNos=x.workerNos;
+    j.hours=x.hours;
+    j.tallyNos=x.tallyNos;
+    j.remarks=x.remarks;
+    j.damages=x.damages;
+  }
+
+  db();
+
+  closeSupervisorEdit();
+  renderSupervisor();
+  renderAll();
+  renderManager();
+
+  alert(
+    "Supervisor entry updated successfully."
+  );
+}
+
+function employeeId(){
+
+  return "EMP-"+Date.now()+"-"+
+    Math.random().toString(36).slice(2,7);
+}
+
+function saveEmployee(){
+
+  const name=val("empName"),
+        post=val("empPost"),
+        pay=Number(val("empPay"))||0;
+
+  if(!name||!post)
+    return alert(
+      "Employee Name and Employee Post are required"
+    );
+
+  if(editingEmployeeId){
+
+    const i=employees.findIndex(x=>
+      String(x.id)===String(editingEmployeeId)
+    );
+
+    if(i<0)
+      return alert("Employee not found");
+
+    employees[i]={
+      ...employees[i],
+      name,
+      post,
+      hourlyPay:pay
+    };
+
+  }else{
+
+    if(
+      employees.some(x=>
+        String(x.name).toLowerCase()===
+        name.toLowerCase()
+      )
+    )
+      return alert("Employee already exists");
+
+    employees.push({
+      id:employeeId(),
+      name,
+      post,
+      hourlyPay:pay
+    });
+  }
+
+  db();
+
+  clearEmployee();
+  renderEmployees();
+  renderOvertime();
+
+  alert("Employee saved successfully");
+}
+
+function clearEmployee(){
+
+  editingEmployeeId=null;
+
+  [
+    "empName",
+    "empPost",
+    "empPay"
+  ].forEach(id=>{
+    if(el(id))el(id).value="";
+  });
+}
+
+function editEmployee(id){
+
+  const x=employees.find(e=>
+    String(e.id)===String(id)
+  );
+
+  if(!x)return;
+
+  editingEmployeeId=x.id;
+
+  el("empName").value=x.name||"";
+  el("empPost").value=x.post||"";
+  el("empPay").value=x.hourlyPay||"";
+
+  window.scrollTo({
+    top:document.body.scrollHeight,
+    behavior:"smooth"
+  });
+}
+
+function deleteEmployee(id){
+
+  const x=employees.find(e=>
+    String(e.id)===String(id)
+  );
+
+  if(!x)return;
+
+  if(confirm("Delete employee "+x.name+"?")){
+
+    employees=employees.filter(e=>
+      String(e.id)!==String(id)
+    );
+
+    db();
+
+    renderEmployees();
+    renderOvertime();
+  }
+}
+
+function renderEmployees(){
+
+  if(!el("employeeTable"))return;
+
+  el("employeeTable").innerHTML=
+    employees.map(x=>
+
+      '<tr>'+
+      '<td>'+esc(x.name)+'</td>'+
+      '<td>'+esc(x.post)+'</td>'+
+      '<td>'+Number(x.hourlyPay||0).toFixed(2)+'</td>'+
+      '<td><button class="btn btn-blue" onclick="editEmployee(\''+
+      idArg(x.id)+
+      '\')">Edit</button></td>'+
+      '<td><button class="btn btn-red" onclick="deleteEmployee(\''+
+      idArg(x.id)+
+      '\')">Delete</button></td>'+
+      '</tr>'
+
+    ).join("") ||
+    '<tr><td colspan="5">No employees created yet</td></tr>';
+
+  setEmployeeOptions(
+    "otEmployee",
+    val("otEmployee")
+  );
+
+  setEmployeeOptions(
+    "oeEmployee",
+    val("oeEmployee")
+  );
+}
+
+function setEmployeeOptions(id,keep){
+
+  const e=el(id);
+
+  if(!e)return;
+
+  const old=keep||e.value||"";
+
+  e.innerHTML=
+    '<option value="">Select Employee</option>'+
+    employees.map(x=>
+      '<option value="'+
+      attr(x.id)+
+      '">'+
+      esc(x.name)+
+      '</option>'
+    ).join("");
+
+  if(
+    employees.some(x=>
+      String(x.id)===String(old)
+    )
+  )
+    e.value=old;
+  else
+    e.value="";
+}
+
+function setCustomerOptions(id,keep){
+
+  const e=el(id);
+
+  if(!e)return;
+
+  const old=keep||e.value||"";
+
+  e.innerHTML=
+    '<option value="">Select Customer</option>'+
+    masters.customers.map(x=>
+      '<option value="'+
+      attr(x)+
+      '">'+
+      esc(x)+
+      '</option>'
+    ).join("");
+
+  if(
+    masters.customers.some(x=>
+      String(x)===String(old)
+    )
+  )
+    e.value=old;
+  else
+    e.value="";
+}
+
+function employeeById(id){
+
+  return employees.find(x=>
+    String(x.id)===String(id)
+  );
+}
+
+function hoursBetween(start,off){
+
+  if(!start||!off)return 0;
+
+  const [sh,sm]=start.split(":").map(Number),
+        [eh,em]=off.split(":").map(Number);
+
+  if(
+    [sh,sm,eh,em]
+    .some(Number.isNaN)
+  )
+    return 0;
+
+  let mins=
+    (eh*60+em)-
+    (sh*60+sm);
+
+  if(mins<0)
+    mins+=24*60;
+
+  return Math.round(
+    (mins/60)*100
+  )/100;
+}
+
+function loadEmployeePay(){
+
+  const x=
+    employeeById(
+      val("otEmployee")
+    );
+
+  if(el("otHourlyPay"))
+    el("otHourlyPay").value=
+      x
+      ?Number(x.hourlyPay||0)
+      :"";
+
+  calculateOvertime();
+}
+
+function calculateOvertime(){
+
+  const h=
+    hoursBetween(
+      val("otStart"),
+      val("otOff")
+    );
+
+  if(h)
+    el("otHours").value=h;
+
+  calculateOvertimeAmount();
+}
+
+function calculateOvertimeAmount(){
+
+  const pay=
+    Number(val("otHourlyPay"))||0;
+
+  const h=
+    Number(val("otHours"))||0;
+
+  const amount=pay*h;
+
+  const a=el("otAmount");
+
+  if(
+    a &&
+    !a.dataset.manual
+  )
+    a.value=
+      amount
+      ?amount.toFixed(2)
+      :"";
+}
+
+function markOtAmountManual(){
+
+  const a=el("otAmount");
+
+  if(a)
+    a.dataset.manual="1";
+}
+
+function clearOvertime(){
+
+  [
+    "otDate",
+    "otReceipt",
+    "otHours",
+    "otAmount",
+    "otRemarks",
+    "otStart",
+    "otOff",
+    "otHourlyPay"
+  ].forEach(id=>{
+    if(el(id))el(id).value="";
+  });
+
+  if(el("otEmployee"))
+    el("otEmployee").value="";
+
+  if(el("otCustomer"))
+    el("otCustomer").value="";
+
+  if(el("otAmount"))
+    el("otAmount").dataset.manual="";
+}
+
+function saveOvertime(){
+
+  const date=val("otDate"),
+        eid=val("otEmployee"),
+        cust=val("otCustomer"),
+        start=val("otStart"),
+        off=val("otOff");
+
+  if(!date||!eid||!start||!off)
+    return alert(
+      "Date, Employee, Start Time and Off Time are required"
+    );
+
+  const emp=employeeById(eid);
+
+  if(!emp)
+    return alert("Select a valid employee");
+
+  const h=
+    Number(val("otHours"))||0;
+
+  const computed=
+    Number(emp.hourlyPay||0)*h;
+
+  const manual=val("otAmount");
+
+  const amount=
+    manual!==""
+    ?Number(manual)
+    :computed;
+
+  const row={
+    id:
+      "OT-"+Date.now()+"-"+
+      Math.random().toString(36).slice(2,7),
+
+    date,
+
+    employeeId:eid,
+    employeeName:emp.name,
+    post:emp.post,
+
+    hourlyPay:
+      Number(emp.hourlyPay||0),
+
+    startTime:start,
+    offTime:off,
+
+    totalHours:h,
+
+    customer:cust,
+    receiptNo:val("otReceipt"),
+
+    totalAmount:
+      Number.isFinite(amount)
+      ?amount
+      :computed,
+
+    remarks:val("otRemarks")
+  };
+
+  overtimeData.push(row);
+
+  db();
+
+  clearOvertime();
+  renderOvertime();
+
+  alert("Overtime saved successfully");
+}
+
+function renderOvertime(){
+
+  setEmployeeOptions(
+    "otEmployee",
+    val("otEmployee")
+  );
+
+  setEmployeeOptions(
+    "oeEmployee",
+    val("oeEmployee")
+  );
+
+  setCustomerOptions(
+    "otCustomer",
+    val("otCustomer")
+  );
+
+  setCustomerOptions(
+    "oeCustomer",
+    val("oeCustomer")
+  );
+
+  if(!el("overtimeTable"))return;
+
+  el("overtimeTable").innerHTML=
+    overtimeData.map((x,i)=>
+
+      '<tr>'+
+      '<td>'+esc(x.date)+'</td>'+
+      '<td>'+esc(x.employeeName)+'</td>'+
+      '<td>'+esc(x.post)+'</td>'+
+      '<td>'+Number(x.hourlyPay||0).toFixed(2)+'</td>'+
+      '<td>'+esc(x.startTime)+'</td>'+
+      '<td>'+esc(x.offTime)+'</td>'+
+      '<td>'+Number(x.totalHours||0).toFixed(2)+'</td>'+
+      '<td>'+esc(x.customer)+'</td>'+
+      '<td>'+esc(x.receiptNo)+'</td>'+
+      '<td>'+Number(x.totalAmount||0).toFixed(2)+'</td>'+
+      '<td>'+esc(x.remarks)+'</td>'+
+      '<td><button class="btn btn-blue" onclick="editOvertime('+
+      i+
+      ')">Edit</button></td>'+
+      '<td><button class="btn btn-red" onclick="deleteOvertime('+
+      i+
+      ')">Delete</button></td>'+
+      '</tr>'
+
+    ).join("") ||
+    '<tr><td colspan="13">No overtime entries yet</td></tr>';
+}
+
+function editOvertime(index){
+
+  const x=overtimeData[index];
+
+  if(!x)return;
+
+  renderEmployees();
+
+  setCustomerOptions(
+    "oeCustomer",
+    x.customer||""
+  );
+
+  el("oeDate").value=x.date||"";
+  el("oeEmployee").value=x.employeeId||"";
+  el("oeStart").value=x.startTime||"";
+  el("oeOff").value=x.offTime||"";
+
+  loadEditEmployeePay();
+
+  el("oeHours").value=
+    x.totalHours||"";
+
+  el("oeReceipt").value=
+    x.receiptNo||"";
+
+  el("oeAmount").value=
+    x.totalAmount||"";
+
+  el("oeRemarks").value=
+    x.remarks||"";
+
+  el("overtimeEditModal")
+    .dataset.index=
+    String(index);
+
+  el("overtimeEditModal")
+    .classList.add("show");
+}
+
+function loadEditEmployeePay(){
+
+  const x=
+    employeeById(
+      val("oeEmployee")
+    );
+
+  el("oePay").value=
+    x
+    ?Number(x.hourlyPay||0)
+    :"";
+
+  calculateEditOvertime();
+}
+
+function calculateEditOvertime(){
+
+  const h=
+    hoursBetween(
+      val("oeStart"),
+      val("oeOff")
+    );
+
+  if(h)
+    el("oeHours").value=h;
+
+  calculateEditOvertimeAmount();
+}
+
+function calculateEditOvertimeAmount(){
+
+  const pay=
+    Number(val("oePay"))||0;
+
+  const h=
+    Number(val("oeHours"))||0;
+
+  el("oeAmount").value=
+    (pay*h).toFixed(2);
+}
+
+function closeOvertimeEdit(){
+
+  el("overtimeEditModal")
+    .classList.remove("show");
+
+  delete el("overtimeEditModal")
+    .dataset.index;
+}
+
+function saveOvertimeEdit(){
+
+  const modal=
+    el("overtimeEditModal");
+
+  const index=
+    Number(modal.dataset.index);
+
+  if(
+    !Number.isInteger(index)||
+    !overtimeData[index]
+  )
+    return alert(
+      "Overtime entry not found"
+    );
+
+  const eid=val("oeEmployee"),
+        emp=employeeById(eid);
+
+  if(!emp)
+    return alert(
+      "Select a valid employee"
+    );
+
+  overtimeData[index]={
+    ...overtimeData[index],
+
+    date:val("oeDate"),
+
+    employeeId:eid,
+    employeeName:emp.name,
+    post:emp.post,
+
+    hourlyPay:
+      Number(emp.hourlyPay||0),
+
+    startTime:val("oeStart"),
+    offTime:val("oeOff"),
+
+    totalHours:
+      Number(val("oeHours"))||0,
+
+    customer:val("oeCustomer"),
+    receiptNo:val("oeReceipt"),
+
+    totalAmount:
+      Number(val("oeAmount"))||0,
+
+    remarks:val("oeRemarks")
+  };
+
+  db();
+
+  closeOvertimeEdit();
+  renderOvertime();
+
+  alert(
+    "Overtime updated successfully"
+  );
+}
+
+function deleteOvertime(index){
+
+  if(!overtimeData[index])return;
+
+  if(confirm("Delete this overtime entry?")){
+
+    overtimeData.splice(index,1);
+
+    db();
+    renderOvertime();
+  }
+}
+
+function renderManager(){
+
+  const q=
+    jobs.reduce(
+      (s,x)=>
+        s+Number(x.qty||0),
+      0
+    );
+
+  const i=
+    jobs.filter(x=>
+      x.type==="Inbound"
+    ).reduce(
+      (s,x)=>
+        s+Number(x.qty||0),
+      0
+    );
+
+  const o=
+    jobs.filter(x=>
+      x.type==="Outbound"
+    ).reduce(
+      (s,x)=>
+        s+Number(x.qty||0),
+      0
+    );
+
+  el("managerJobs").textContent=
+    jobs.length;
+
+  el("managerQty").textContent=q;
+
+  el("managerInbound").textContent=i;
+
+  el("managerOutbound").textContent=o;
+
+  el("managerTable").innerHTML=
+    jobs.map(j=>
+
+      '<tr>'+
+      '<td>'+esc(j.jobNumber)+'</td>'+
+      '<td>'+esc(j.customer)+'</td>'+
+      '<td>'+esc(j.type)+'</td>'+
+      '<td>'+esc(j.qty)+'</td>'+
+      '<td>'+esc(j.status)+'</td>'+
+      '<td>'+esc(j.csr)+'</td>'+
+      '<td>'+esc(j.reportingTime)+'</td>'+
+      '<td>'+esc(j.dispatchTime)+'</td>'+
+      '</tr>'
+
+    ).join("") ||
+    '<tr><td colspan="8">No connected jobs</td></tr>';
+}
+
+function csv(name,headers,rows){
+
+  const all=
+    [headers].concat(rows||[]);
+
+  const text=
+    all.map(row=>
+      row.map(x=>
+        '"'+
+        String(x==null?"":x)
+        .replace(/"/g,'""')+
+        '"'
+      ).join(",")
+    ).join("\r\n");
+
+  const blob=
+    new Blob(
+      ["\ufeff"+text],
+      {
+        type:"text/csv;charset=utf-8"
+      }
+    );
+
+  const a=
+    document.createElement("a");
+
+  const url=
+    URL.createObjectURL(blob);
+
+  a.href=url;
+  a.download=name;
+
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  setTimeout(()=>
+    URL.revokeObjectURL(url),
+    500
+  );
+}
+
+function exportOffice(){
+
+  const h=[
+    "Date Of Job",
+    "Job Number",
+    "Type",
+    "Customer",
+    "CSR",
+    "QTY",
+    "UOM",
+    "Type Of Vehicle",
+    "Vehicle Number",
+    "Status",
+    "Assigned Tally",
+    "Estimated Shipment Date",
+    "Requested Time Slot",
+    "Approved Time Slot",
+    "Arrival Date",
+    "Reporting Time",
+    "Dispatch Time",
+    "Labelling Status",
+    "Customs Clearance",
+    "Transportation",
+    "VAS Activity",
+    "Gate Pass In",
+    "Gate Pass Out",
+    "Overtime",
+    "Remarks"
+  ];
+
+  csv(
+    "HITRA_WMS_Office_Data.csv",
+    h,
+    filteredJobs().map(j=>[
+      j.dateOfJob,
+      j.jobNumber,
+      j.type,
+      j.customer,
+      j.csr,
+      j.qty,
+      j.uom,
+      j.vehicle,
+      j.vehicleNumber,
+      j.status,
+      j.assignedTally,
+      j.estimatedShipmentDate,
+      j.requestedTime,
+      j.approvedTime,
+      j.arrivalDate,
+      j.reportingTime,
+      j.dispatchTime,
+      j.labellingStatus,
+      j.customs,
+      j.transportation,
+      j.vas,
+      j.gateIn,
+      j.gateOut,
+      j.overtime,
+      j.remarks
+    ])
+  );
+}
+
+function exportOvertime(){
+
+  const h=[
+    "Date",
+    "Employee Name",
+    "Employee Post",
+    "Hourly Pay",
+    "Start Time",
+    "Off Time",
+    "Total Hours Billed",
+    "Customer Name",
+    "Receipt No",
+    "Total Amount",
+    "Remarks"
+  ];
+
+  csv(
+    "HITRA_WMS_Supervisor_Overtime.csv",
+    h,
+    overtimeData.map(x=>[
+      x.date,
+      x.employeeName,
+      x.post,
+      x.hourlyPay,
+      x.startTime,
+      x.offTime,
+      x.totalHours,
+      x.customer,
+      x.receiptNo,
+      x.totalAmount,
+      x.remarks
+    ])
+  );
+}
+
+function exportSupervisor(){
+
+  const h=[
+    "Job Number",
+    "Type",
+    "Customer",
+    "CSR",
+    "Approved Time",
+    "Dispatch Time",
+    "Worker No's",
+    "Hours",
+    "Tally No's",
+    "Remarks",
+    "Damages"
+  ];
+
+  csv(
+    "HITRA_WMS_Supervisor_Data.csv",
+    h,
+    supervisorData.map(x=>[
+      x.jobNumber,
+      x.type,
+      x.customer,
+      x.csr,
+      x.approvedTime,
+      x.dispatchTime,
+      x.workerNos,
+      x.hours,
+      x.tallyNos,
+      x.remarks,
+      x.damages
+    ])
+  );
+}
+
+
+/* =========================================================
+   INITIAL LOCAL LOAD
+========================================================= */
+
+db();
+loadUI();
+clearOffice();
+renderAll();
+renderSupervisor();
+renderManager();
+renderEmployees();
+renderOvertime();
+
+</script>
+
+</body>
+</html>
