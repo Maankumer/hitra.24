@@ -9,6 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#fff8f8;color:#17384b}
@@ -64,6 +65,10 @@ th{background:#fff0f1;color:#72565b;font-size:12px;padding:11px;text-align:left;
 }
 #cloudStatus.online{color:#2f8b68;background:#eaf7f0}
 #cloudStatus.offline{color:#b74450;background:#fff0f1}
+
+/* Manager + weekly dashboard additions */
+.manager-section{display:none}.manager-section.active{display:block}.manager-chart-grid{grid-template-columns:repeat(3,1fr)}.manager-wide{grid-column:span 2}.manager-export-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.manager-export-card{min-height:165px}.custom-dashboard-placeholder{max-width:900px}.custom-upload-box{border:2px dashed #e8c9cd;border-radius:12px;padding:28px;text-align:center;background:#fff8f9}.weekly-chart{width:100%;display:grid;grid-template-columns:repeat(7,1fr);gap:10px;align-items:end;min-height:235px;padding:10px 4px}.weekly-day{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}.weekly-bars{height:175px;display:flex;align-items:flex-end;gap:4px;width:100%;justify-content:center}.weekly-bar{width:20px;min-height:3px;border-radius:4px 4px 0 0;background:#c85a63;cursor:pointer}.weekly-bar.out{background:#e7a8ad}.weekly-label{font-size:11px;font-weight:700;color:#72565b}.weekly-value{font-size:10px;color:#78909c}@media(max-width:1100px){.manager-chart-grid{grid-template-columns:repeat(2,1fr)}.manager-wide{grid-column:span 2}.manager-export-grid{grid-template-columns:1fr}}@media(max-width:700px){.manager-chart-grid{grid-template-columns:1fr}.manager-wide{grid-column:span 1}.weekly-chart{overflow-x:auto;grid-template-columns:repeat(7,90px)}}
+
 </style>
 </head>
 <body>
@@ -74,23 +79,39 @@ th{background:#fff0f1;color:#72565b;font-size:12px;padding:11px;text-align:left;
 <h1>HITRA</h1><p>Warehouse Management System</p>
 <div class="form-group"><label>Login ID</label><input id="loginUser" placeholder="Enter Login ID"></div>
 <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter Password"></div>
-<div class="form-group"><label>Role</label><select id="loginRole"><option value="">Select Role</option><option value="csr">CSR</option><option value="warehouse">Warehouse</option><option value="supervisor">Supervisor</option><option value="manager">Manager</option></select></div>
+<div class="form-group"><label>Role</label><select id="loginRole"><option value="">Select Role</option><option value="csr">CSR</option><option value="warehouse">Warehouse</option><option value="supervisor">Supervisor</option><option value="manager">Manager</option><option value="crm">CRM</option></select></div>
 <button class="login-btn" onclick="login()">LOGIN</button><div id="loginError" class="error"></div>
 </div></div>
 
-<div id="adminModal" class="modal"><div class="modal-box">
-<h2>Admin Panel</h2><p class="small">Admin Login: patel.09 / 2816</p>
+<div id="adminModal" class="modal"><div class="modal-box admin-box">
+<h2>Admin Panel</h2><p class="small">Admin Login • Password • Email OTP Verification</p>
 <div id="adminLoginBox">
-<div class="form-group"><label>Admin ID</label><input id="adminUser"></div>
-<div class="form-group"><label>Admin Password</label><input id="adminPass" type="password"></div>
-<button class="btn btn-blue" onclick="adminLogin()">Admin Login</button>
+<div class="form-group"><label>1. Admin ID</label><input id="adminUser" autocomplete="username" placeholder="Enter Admin ID"></div>
+<div class="form-group"><label>2. Admin Password</label><input id="adminPass" type="password" autocomplete="current-password" placeholder="Enter Admin Password"></div>
+<button class="btn btn-blue" onclick="adminLogin()">Continue</button>
+
+<div id="adminEmailBox" class="hidden" style="margin-top:15px">
+<div class="notice">Admin ID and password are correct. Now verify the Admin email.</div>
+<div class="form-group"><label>3. Admin Email</label><input id="adminEmail" value="pman47732@gmail.com" readonly class="readonly"></div>
+<button class="btn btn-blue" onclick="sendAdminOTP()">Verify Your Email</button>
+</div>
+
+<div id="adminOtpBox" class="hidden" style="margin-top:15px">
+<div class="notice">A random 4-digit HITRA OTP has been sent to <b id="adminEmailText">pman47732@gmail.com</b>. It is valid for 30 seconds.</div>
+<div class="form-group"><label>4. Enter 4-Digit HITRA OTP</label><input id="adminOtp" inputmode="numeric" maxlength="4" autocomplete="one-time-code" placeholder="Enter 4-digit OTP"></div>
+<div class="small" id="otpTimer"></div>
+<div class="actions" style="margin-top:10px"><button class="btn btn-green" onclick="verifyAdminOTP()">Verify OTP & Open Admin</button><button class="btn btn-gray" onclick="sendAdminOTP(true)">Resend OTP</button></div>
+</div>
+
+<div id="adminError" class="error"></div>
 </div>
 <div id="adminPanelBox" class="hidden">
+<div class="notice">Admin access verified successfully.</div>
 <div class="form-group"><label>New Login ID</label><input id="newUser"></div>
 <div class="form-group"><label>New Password</label><input id="newPass"></div>
-<div class="form-group"><label>Role</label><select id="newRole"><option value="csr">CSR</option><option value="warehouse">Warehouse</option><option value="supervisor">Supervisor</option><option value="manager">Manager</option></select></div>
+<div class="form-group"><label>Role</label><select id="newRole"><option value="csr">CSR</option><option value="warehouse">Warehouse</option><option value="supervisor">Supervisor</option><option value="manager">Manager</option><option value="crm">CRM</option></select></div>
 <button class="btn btn-green" onclick="createUser()">Create User</button>
-<div class="table-wrap"><table style="min-width:350px"><thead><tr><th>Login ID</th><th>Role</th><th>Action</th></tr></thead><tbody id="usersTable"></tbody></table></div>
+<div class="table-wrap"><table style="min-width:400px"><thead><tr><th>Login ID</th><th>Role</th><th>Action</th></tr></thead><tbody id="usersTable"></tbody></table></div>
 </div>
 <div class="modal-actions"><button class="btn btn-gray" onclick="closeAdmin()">Close</button></div>
 </div></div>
@@ -132,6 +153,7 @@ th{background:#fff0f1;color:#72565b;font-size:12px;padding:11px;text-align:left;
 <div id="chartDg" class="card chart"><h3>DG vs Non-DG</h3><div id="dgDonut" class="donut clickable" title="Click chart to toggle DG / Non-DG"><div id="dgText" class="donut-text">0 / 0</div></div><div class="chart-actions"><button id="dgBtnDG" class="chart-filter-btn" onclick="setDashboardFilter('fDg','DG')">DG: 0</button><button id="dgBtnNon" class="chart-filter-btn" onclick="setDashboardFilter('fDg','Non-DG')">Non-DG: 0</button></div></div>
 <div id="chartDock" class="card chart"><h3>Quantity vs Dock</h3><div id="dockChart" class="bars"></div><div class="small">Click any dock bar to filter the whole dashboard.</div></div>
 <div id="chartType" class="card chart"><h3>Inbound vs Outbound Jobs</h3><div id="typeDonut" class="donut clickable" title="Click chart to toggle Inbound / Outbound"><div id="typeText" class="donut-text">0 / 0</div></div><div class="chart-actions"><button id="typeBtnIn" class="chart-filter-btn" onclick="setDashboardFilter('fType','Inbound')">Inbound: 0</button><button id="typeBtnOut" class="chart-filter-btn" onclick="setDashboardFilter('fType','Outbound')">Outbound: 0</button></div><div class="small">Click the chart or a button to filter.</div></div>
+<div class="card chart manager-wide"><h3>Weekly Inbound vs Outbound</h3><div id="weeklyChart" class="weekly-chart"></div><div class="small">Click a day and its Inbound/Outbound bar to filter.</div></div>
 </div>
 
 <div class="title-row" style="margin-top:20px"><h3>Day-to-Day Data</h3><button class="btn btn-green" onclick="exportOffice()">⬇ Export Excel / CSV</button></div>
@@ -160,7 +182,7 @@ th{background:#fff0f1;color:#72565b;font-size:12px;padding:11px;text-align:left;
 
 <div id="officeMasters" class="section">
 <div class="card"><h3>Masters Making</h3><p class="small">Add values used in dropdown lists. Every master row can be deleted.</p>
-<div class="entry-grid"><div><label>Customer</label><input id="mCustomer"></div><div><label>UOM</label><input id="mUom"></div><div><label>CSR Name</label><input id="mCsr"></div><div><label>DG Class</label><input id="mDg"></div><div><label>Status</label><input id="mStatus"></div><div><label>VAS Activity</label><input id="mVas"></div><div><label>Vehicle Type</label><input id="mVehicle"></div><div><label>Tally Name</label><input id="mTally"></div><div><label>Dock</label><input id="mDock"></div></div>
+<div class="entry-grid"><div><label>Customer</label><input id="mCustomer"></div><div><label>UOM</label><input id="mUom"></div><div><label>CSR Name</label><input id="mCsr"></div><div><label>DG Class</label><input id="mDgClass" placeholder="e.g. Class 2"></div><div><label>Status</label><input id="mStatus"></div><div><label>VAS Activity</label><input id="mVas"></div><div><label>Vehicle Type</label><input id="mVehicle"></div><div><label>Tally Name</label><input id="mTally"></div><div><label>Dock</label><input id="mDock"></div></div>
 <div class="actions"><button class="btn btn-blue" onclick="addMasters()">Add Master Values</button></div></div>
 <div class="table-wrap"><table style="min-width:1000px"><thead><tr><th>Type</th><th>Value</th><th>Delete</th></tr></thead><tbody id="masterTable"></tbody></table></div>
 </div>
@@ -188,9 +210,65 @@ th{background:#fff0f1;color:#72565b;font-size:12px;padding:11px;text-align:left;
 <div id="overtimeEditModal" class="modal"><div class="modal-box edit-modal-box"><h2>Edit Overtime</h2><p class="small">Update the overtime entry and press Save Changes.</p><div class="edit-grid">
 <div><label>Date</label><input id="oeDate" type="date"></div><div><label>Employee Name</label><select id="oeEmployee" onchange="loadEditEmployeePay()"></select></div><div><label>Start Time</label><input id="oeStart" type="time" onchange="calculateEditOvertime()"></div><div><label>Off Time</label><input id="oeOff" type="time" onchange="calculateEditOvertime()"></div><div><label>Hourly Pay</label><input id="oePay" class="readonly" type="number" step="0.01" readonly></div><div><label>Customer Name</label><select id="oeCustomer"></select></div><div><label>Receipt No</label><input id="oeReceipt"></div><div><label>Total Hours Billed</label><input id="oeHours" type="number" step="0.01" min="0" oninput="calculateEditOvertimeAmount()"></div><div><label>Total Amount</label><input id="oeAmount" type="number" step="0.01" min="0"></div><div><label>Remarks</label><input id="oeRemarks"></div></div><div class="modal-actions"><button class="btn btn-green" onclick="saveOvertimeEdit()">Save Changes</button><button class="btn btn-gray" onclick="closeOvertimeEdit()">Cancel</button></div></div></div>
 
-<div id="managerPage" class="page"><div class="title-row"><h2>Manager Dashboard</h2></div><div class="notice">Manager overview. Detailed Manager requirements can be added later without changing the connected workflow.</div>
-<div class="grid"><div class="card"><div class="kpi-title">Total Jobs</div><div id="managerJobs" class="kpi-value">0</div></div><div class="card"><div class="kpi-title">Total Quantity</div><div id="managerQty" class="kpi-value">0</div></div><div class="card"><div class="kpi-title">Inbound Quantity</div><div id="managerInbound" class="kpi-value">0</div></div><div class="card"><div class="kpi-title">Outbound Quantity</div><div id="managerOutbound" class="kpi-value">0</div></div></div>
-<div class="card" style="margin-top:15px"><h3>All Connected Jobs</h3><div class="table-wrap"><table><thead><tr><th>Job</th><th>Customer</th><th>Type</th><th>QTY</th><th>Status</th><th>CSR</th><th>Reporting</th><th>Dispatch</th></tr></thead><tbody id="managerTable"></tbody></table></div></div>
+<div id="managerPage" class="page">
+<div class="title-row"><h2>Manager</h2></div>
+<div class="tabs manager-tabs">
+<button class="tab active" onclick="showManager('dashboard',this)">Dashboard</button>
+<button class="tab" onclick="showManager('excel',this)">Excel</button>
+<button class="tab" onclick="showManager('custom',this)">Create Your Dashboard</button>
+</div>
+
+<div id="managerDashboardSection" class="manager-section active">
+<div class="filters manager-filters">
+<div><label>Date From</label><input type="date" id="mfDateFrom" onchange="renderManagerDashboard()"></div>
+<div><label>Date To</label><input type="date" id="mfDateTo" onchange="renderManagerDashboard()"></div>
+<div><label>Customer</label><select id="mfCustomer" onchange="renderManagerDashboard()"></select></div>
+<div><label>Vehicle Name</label><select id="mfVehicleType" onchange="renderManagerDashboard()"></select></div>
+<div><label>Vehicle Number</label><input id="mfVehicleNumber" oninput="renderManagerDashboard()"></div>
+<div><label>Status</label><select id="mfStatus" onchange="renderManagerDashboard()"></select></div>
+<div><label>UOM</label><select id="mfUom" onchange="renderManagerDashboard()"></select></div>
+<div><label>DG / Non-DG</label><select id="mfDg" onchange="renderManagerDashboard()"></select></div>
+<div><label>DG Class</label><select id="mfDgClass" onchange="renderManagerDashboard()"></select></div>
+<div><label>CSR</label><select id="mfCsr" onchange="renderManagerDashboard()"></select></div>
+<div><label>Dock</label><select id="mfDock" onchange="renderManagerDashboard()"></select></div>
+<div><label>Job Type</label><select id="mfType" onchange="renderManagerDashboard()"></select></div>
+<div><label>Weekday</label><select id="mfWeekday" onchange="renderManagerDashboard()"></select></div>
+<div style="display:flex;align-items:end"><button class="btn btn-gray" style="width:100%" onclick="clearManagerFilters()">Clear Filters</button></div>
+</div>
+
+<div class="grid manager-kpis">
+<div class="card"><div class="kpi-title">Total Customer</div><div id="mkCustomer" class="kpi-value">0</div></div>
+<div class="card"><div class="kpi-title">Total Quantity</div><div id="mkQty" class="kpi-value">0</div></div>
+<div class="card clickable" onclick="setManagerFilter('mfType','Inbound')"><div class="kpi-title">Total Inbound Jobs</div><div id="mkInbound" class="kpi-value">0</div></div>
+<div class="card clickable" onclick="setManagerFilter('mfType','Outbound')"><div class="kpi-title">Total Outbound Jobs</div><div id="mkOutbound" class="kpi-value">0</div></div>
+<div class="card"><div class="kpi-title">Avg. Loading Hours</div><div id="mkLoading" class="kpi-value">0.00 h</div></div>
+<div class="card"><div class="kpi-title">Avg. Offloading Hours</div><div id="mkOffloading" class="kpi-value">0.00 h</div></div>
+</div>
+
+<div class="chart-grid manager-chart-grid">
+<div class="card chart"><h3>DG vs Non-DG</h3><div id="mDgDonut" class="donut clickable"><div id="mDgText" class="donut-text">0 / 0</div></div><div class="chart-actions"><button id="mDgBtnDG" class="chart-filter-btn" onclick="setManagerFilter('mfDg','DG')">DG: 0</button><button id="mDgBtnNon" class="chart-filter-btn" onclick="setManagerFilter('mfDg','Non-DG')">Non-DG: 0</button></div></div>
+<div class="card chart"><h3>Quantity vs Dock</h3><div id="mDockChart" class="bars"></div><div class="small">Click any dock bar to filter the dashboard.</div></div>
+<div class="card chart"><h3>Inbound vs Outbound Jobs</h3><div id="mTypeDonut" class="donut clickable"><div id="mTypeText" class="donut-text">0 / 0</div></div><div class="chart-actions"><button id="mTypeBtnIn" class="chart-filter-btn" onclick="setManagerFilter('mfType','Inbound')">Inbound: 0</button><button id="mTypeBtnOut" class="chart-filter-btn" onclick="setManagerFilter('mfType','Outbound')">Outbound: 0</button></div></div>
+<div class="card chart manager-wide"><h3>Weekly Inbound vs Outbound</h3><div id="mWeeklyChart" class="weekly-chart"></div><div class="small">Click a day and its Inbound/Outbound bar to filter.</div></div>
+<div class="card chart"><h3>DG Class vs Quantity</h3><div id="mDgClassChart" class="bars"></div><div class="small">Click a DG Class bar to filter.</div></div>
+<div class="card chart"><h3>DG Class vs Dock</h3><div id="mDgClassDockChart" class="bars"></div><div class="small">Click a DG Class / Dock bar to filter.</div></div>
+<div class="card chart manager-wide"><h3>CSR vs Inbound & Outbound</h3><div id="mCsrTypeChart" class="bars"></div><div class="small">Click a CSR bar to filter.</div></div>
+</div>
+</div>
+
+<div id="managerExcelSection" class="manager-section">
+<div class="notice">Manager Excel Center</div>
+<div class="manager-export-grid">
+<div class="card manager-export-card"><h3>CSR / Office Excel</h3><p class="small">Connected CSR day-to-day data.</p><button class="btn btn-green" onclick="exportOffice()">⬇ Export CSR Excel / CSV</button></div>
+<div class="card manager-export-card"><h3>Supervisor Excel</h3><p class="small">Saved Supervisor job data.</p><button class="btn btn-green" onclick="exportSupervisor()">⬇ Export Supervisor Excel / CSV</button></div>
+<div class="card manager-export-card"><h3>Supervisor Overtime Excel</h3><p class="small">Employee, hours, pay, customer and amount.</p><button class="btn btn-green" onclick="exportOvertime()">⬇ Export Overtime Excel / CSV</button></div>
+</div>
+</div>
+
+<div id="managerCustomSection" class="manager-section">
+<div class="notice"><b>Create Your Dashboard</b> is ready for the Excel format you will provide next. The exact Power BI-style column mapping will be added after your sample format is supplied.</div>
+<div class="card custom-dashboard-placeholder"><h3>Upload Dashboard Excel Format</h3><p class="small">You can select your future XLSX/XLS/CSV template now.</p><div class="custom-upload-box"><input id="customDashboardFile" type="file" accept=".xlsx,.xls,.csv"></div><div id="customDashboardFileName" class="small" style="margin-top:10px">No file selected</div></div>
+</div>
 </div>
 
 <!-- CLOUD STATUS -->
@@ -276,7 +354,7 @@ let masters = loadJSON("hitra_masters", {
   uoms:["PCS","BOX","PALLET"],
   csrs:["csr01"],
   dg:["DG","Non-DG"],
-  dgclass:["Class 3","Class 8","Class 9"],
+  dgclass:["Class 2","Class 3","Class 4","Class 8","Class 9"],
   statuses:["Pending","Running","Complete"],
   vas:["Labelling","Repacking","None"],
   vehicles:["Truck","Trailer","Van"],
@@ -293,7 +371,7 @@ let editingEmployeeId = null;
 function normalizeMasters(){
   const defaults = {
     customers:["ABC Customer","XYZ Logistics"], uoms:["PCS","BOX","PALLET"],
-    csrs:["csr01"], dg:["DG","Non-DG"], dgclass:["Class 3","Class 8","Class 9"],
+    csrs:["csr01"], dg:["DG","Non-DG"], dgclass:["Class 2","Class 3","Class 4","Class 8","Class 9"],
     statuses:["Pending","Running","Complete"], vas:["Labelling","Repacking","None"],
     vehicles:["Truck","Trailer","Van"], tallies:["Tally 01","Tally 02"],
     docks:["Dock 1","Dock 2","Dock 3"]
@@ -641,39 +719,6 @@ function logout(){
   el("loginPass").value="";
   el("loginRole").value="";
   el("loginError").textContent="";
-}
-
-function openAdmin(){
-
-  el("adminModal").classList.add("show");
-
-  el("adminLoginBox").classList.remove("hidden");
-  el("adminPanelBox").classList.add("hidden");
-
-  el("adminUser").value="";
-  el("adminPass").value="";
-}
-
-function closeAdmin(){
-  el("adminModal").classList.remove("show");
-}
-
-function adminLogin(){
-
-  if(
-    val("adminUser")===ADMIN_USER &&
-    (el("adminPass").value||"")===ADMIN_PASS
-  ){
-
-    el("adminLoginBox").classList.add("hidden");
-    el("adminPanelBox").classList.remove("hidden");
-
-    renderUsers();
-
-  }else{
-
-    alert("Invalid Admin Login");
-  }
 }
 
 function createUser(){
@@ -3022,6 +3067,712 @@ function exportSupervisor(){
       x.damages
     ])
   );
+}
+
+
+
+/* =========================================================
+   REQUESTED HITRA WMS UPGRADES
+========================================================= */
+
+/* ---------- ADMIN EMAIL OTP ---------- */
+const HITRA_ADMIN_EMAIL_V2 = "pman47732@gmail.com";
+// EmailJS configuration for HITRA WMS Admin OTP.
+// IMPORTANT: In EmailJS template_pbwi23q, set "To Email" to {{to_email}} (or the fixed admin email).
+const EMAILJS_PUBLIC_KEY_V2 = "MnMPaGLjM7L_OJLWw";
+const EMAILJS_SERVICE_ID_V2 = "service_keaj1n7";
+const EMAILJS_TEMPLATE_ID_V2 = "template_pbwi23q";
+let hitraAdminOtp = {code:"",expiresAt:0,timer:null,verified:false};
+
+function resetAdminOtpState(){
+  clearTimeout(hitraAdminOtp.timer);
+  hitraAdminOtp={code:"",expiresAt:0,timer:null,verified:false};
+  if(el("adminOtp"))el("adminOtp").value="";
+  if(el("otpTimer"))el("otpTimer").textContent="";
+}
+
+function openAdmin(){
+  el("adminModal").classList.add("show");
+  el("adminLoginBox").classList.remove("hidden");
+  el("adminPanelBox").classList.add("hidden");
+  el("adminEmailBox").classList.add("hidden");
+  el("adminOtpBox").classList.add("hidden");
+  el("adminUser").value="";
+  el("adminPass").value="";
+  el("adminEmail").value=HITRA_ADMIN_EMAIL_V2;
+  el("adminOtp").value="";
+  el("adminError").textContent="";
+  resetAdminOtpState();
+}
+
+function closeAdmin(){
+  resetAdminOtpState();
+  el("adminModal").classList.remove("show");
+}
+
+function adminLogin(){
+  const u=val("adminUser");
+  const p=el("adminPass").value||"";
+  const err=el("adminError");
+  err.textContent="";
+
+  if(u!==ADMIN_USER || p!==ADMIN_PASS){
+    el("adminEmailBox").classList.add("hidden");
+    el("adminOtpBox").classList.add("hidden");
+    resetAdminOtpState();
+    err.textContent="Invalid Admin ID or Password.";
+    return;
+  }
+
+  el("adminEmail").value=HITRA_ADMIN_EMAIL_V2;
+  el("adminEmailText").textContent=HITRA_ADMIN_EMAIL_V2;
+  el("adminEmailBox").classList.remove("hidden");
+  el("adminOtpBox").classList.add("hidden");
+  err.textContent="";
+}
+
+async function sendAdminOTP(isResend=false){
+  const err=el("adminError");
+  err.textContent="";
+
+  if(val("adminUser")!==ADMIN_USER || (el("adminPass").value||"")!==ADMIN_PASS){
+    err.textContent="Please enter the correct Admin ID and Password first.";
+    return false;
+  }
+
+  if(typeof emailjs==="undefined" ||
+     EMAILJS_PUBLIC_KEY_V2.startsWith("YOUR_") ||
+     EMAILJS_SERVICE_ID_V2.startsWith("YOUR_") ||
+     EMAILJS_TEMPLATE_ID_V2.startsWith("YOUR_")){
+    el("adminOtpBox").classList.add("hidden");
+    err.textContent="Email service is not configured. Add your EmailJS Public Key, Service ID and Template ID in this HTML.";
+    return false;
+  }
+
+  const code=String(Math.floor(1000+Math.random()*9000));
+  hitraAdminOtp.code=code;
+  hitraAdminOtp.expiresAt=Date.now()+30000;
+  hitraAdminOtp.verified=false;
+
+  try{
+    emailjs.init({publicKey:EMAILJS_PUBLIC_KEY_V2});
+    await emailjs.send(EMAILJS_SERVICE_ID_V2,EMAILJS_TEMPLATE_ID_V2,{
+      to_email:HITRA_ADMIN_EMAIL_V2,
+      recipient_email:HITRA_ADMIN_EMAIL_V2,
+      recipient:HITRA_ADMIN_EMAIL_V2,
+      email:HITRA_ADMIN_EMAIL_V2,
+      user_email:HITRA_ADMIN_EMAIL_V2,
+      to:HITRA_ADMIN_EMAIL_V2,
+      otp_code:code,
+      passcode:code,
+      otp:code,
+      hitra_code:code,
+      app_name:"HITRA WMS",
+      admin_email:HITRA_ADMIN_EMAIL_V2,
+      expires_seconds:"30",
+      validity:"30 seconds",
+      time:"30 seconds"
+    });
+
+    el("adminEmailText").textContent=HITRA_ADMIN_EMAIL_V2;
+    el("adminEmailBox").classList.add("hidden");
+    el("adminOtpBox").classList.remove("hidden");
+    el("adminOtp").value="";
+    el("adminOtp").focus();
+    startAdminOtpTimer();
+    err.textContent=isResend?"New HITRA OTP sent successfully.":"HITRA OTP sent successfully.";
+    return true;
+  }catch(error){
+    console.error("HITRA OTP email error:",error);
+    resetAdminOtpState();
+    el("adminOtpBox").classList.add("hidden");
+    const msg = error && (error.text || error.message) ? (error.text || error.message) : "Unknown EmailJS error";
+    err.textContent="HITRA OTP could not be sent: " + msg;
+    return false;
+  }
+}
+
+function startAdminOtpTimer(){
+  clearTimeout(hitraAdminOtp.timer);
+  const tick=()=>{
+    const left=Math.max(0,hitraAdminOtp.expiresAt-Date.now());
+    const sec=Math.ceil(left/1000);
+    if(el("otpTimer")){
+      el("otpTimer").textContent=left>0
+        ?("OTP expires in "+sec+" seconds.")
+        :"OTP expired. Click Resend OTP.";
+    }
+    if(left>0)hitraAdminOtp.timer=setTimeout(tick,250);
+  };
+  tick();
+}
+
+function verifyAdminOTP(){
+  const code=val("adminOtp");
+  const err=el("adminError");
+  err.textContent="";
+
+  if(!hitraAdminOtp.code || Date.now()>hitraAdminOtp.expiresAt){
+    err.textContent="OTP expired. Please click Resend OTP.";
+    return;
+  }
+
+  if(!/^\d{4}$/.test(code) || code!==hitraAdminOtp.code){
+    err.textContent="Wrong 4-digit HITRA OTP.";
+    return;
+  }
+
+  hitraAdminOtp.verified=true;
+  clearTimeout(hitraAdminOtp.timer);
+  el("adminLoginBox").classList.add("hidden");
+  el("adminPanelBox").classList.remove("hidden");
+  renderUsers();
+}
+
+/* ---------- FIXED MASTER MAKING ---------- */
+function loadUI(){
+  if(!Array.isArray(masters.dgclass)||masters.dgclass.length===0){
+    masters.dgclass=["Class 2","Class 3","Class 4","Class 8","Class 9"];
+  }
+  masters.dg=["DG","Non-DG"];
+
+  setOpts("eCustomer",masters.customers);
+  setOpts("eUom",masters.uoms);
+  setOpts("eVehicle",masters.vehicles);
+  setOpts("eStatus",masters.statuses);
+
+  const eDg=el("eDg");
+  const oldDg=eDg?eDg.value:"";
+  if(eDg){
+    eDg.innerHTML=
+      '<option value="">Select DG / Non-DG</option>'+
+      '<option value="DG">DG</option>'+
+      '<option value="Non-DG">Non-DG</option>';
+    if(oldDg==="DG"||oldDg==="Non-DG")eDg.value=oldDg;
+  }
+
+  setOpts("eDgClass",masters.dgclass);
+  setOpts("eVas",masters.vas);
+  setOpts("eDock",masters.docks);
+
+  setOpts("fCustomer",masters.customers,true);
+  setOpts("fVehicleType",masters.vehicles,true);
+  setOpts("fStatus",masters.statuses,true);
+  setOpts("fUom",masters.uoms,true);
+  setOpts("fDgClass",masters.dgclass,true);
+  setOpts("fCsr",masters.csrs,true);
+  setOpts("fDock",masters.docks,true);
+  setOpts("fType",["Inbound","Outbound"],true);
+
+  if(currentUser && !val("eCsr"))el("eCsr").value=currentUser.username;
+  toggleDgClass();
+}
+
+function addMasters(){
+  const map=[
+    ["mCustomer","customers"],
+    ["mUom","uoms"],
+    ["mCsr","csrs"],
+    ["mDgClass","dgclass"],
+    ["mStatus","statuses"],
+    ["mVas","vas"],
+    ["mVehicle","vehicles"],
+    ["mTally","tallies"],
+    ["mDock","docks"]
+  ];
+  let added=0;
+  map.forEach(([id,key])=>{
+    const value=val(id);
+    if(value && Array.isArray(masters[key]) &&
+       !masters[key].some(x=>String(x).toLowerCase()===value.toLowerCase())){
+      masters[key].push(value);
+      el(id).value="";
+      added++;
+    }
+  });
+  masters.dg=["DG","Non-DG"];
+  if(added){
+    db();
+    loadUI();
+    renderMasters();
+    alert(added+" master value(s) added successfully");
+  }else{
+    alert("Enter at least one new master value");
+  }
+}
+
+function renderMasters(){
+  const labels={
+    customers:"Customer",
+    uoms:"UOM",
+    csrs:"CSR Name",
+    dgclass:"DG Class",
+    statuses:"Status",
+    vas:"VAS Activity",
+    vehicles:"Vehicle Type",
+    tallies:"Tally Name",
+    docks:"Dock"
+  };
+  const rows=[];
+  Object.keys(labels).forEach(k=>{
+    (masters[k]||[]).forEach((x,i)=>{
+      rows.push(
+        '<tr><td>'+labels[k]+'</td><td>'+esc(x)+'</td>'+
+        '<td><button class="btn btn-red" onclick="deleteMaster(\''+
+        k+'\','+i+')">Delete</button></td></tr>'
+      );
+    });
+  });
+  el("masterTable").innerHTML=
+    rows.join("")||'<tr><td colspan="3">No master values</td></tr>';
+}
+
+function toggleDgClass(){
+  const dg=val("eDg");
+  const select=el("eDgClass");
+  if(!select)return;
+  const list=Array.isArray(masters.dgclass)?masters.dgclass.filter(Boolean):[];
+  const old=String(select.value||"");
+  select.innerHTML=
+    '<option value="">Select DG Class</option>'+
+    list.map(x=>'<option value="'+attr(x)+'">'+esc(x)+'</option>').join("");
+  const enabled=dg==="DG";
+  select.disabled=!enabled;
+  select.style.opacity=enabled?"1":".55";
+  if(enabled && list.includes(old))select.value=old;
+  else if(enabled && list.length)select.value=list[0];
+  else select.value="";
+}
+
+/* ---------- CSR DASHBOARD + WEEKLY POWER-BI-STYLE INTERACTION ---------- */
+let csrWeekdayFilterV2="";
+
+function filteredJobs(){
+  const df=val("fDateFrom");
+  const dt=val("fDateTo");
+  const vn=val("fVehicleNumber").toLowerCase();
+  const filters=[
+    ["fCustomer","customer"],["fVehicleType","vehicle"],["fStatus","status"],
+    ["fUom","uom"],["fDg","dg"],["fDgClass","dgClass"],["fCsr","csr"],
+    ["fDock","dock"],["fType","type"]
+  ];
+  return jobs.filter(j=>{
+    const jd=String(j.dateOfJob||"");
+    if(df&&jd<df)return false;
+    if(dt&&jd>dt)return false;
+    if(vn&&!String(j.vehicleNumber||"").toLowerCase().includes(vn))return false;
+    if(csrWeekdayFilterV2 && weekdayForJobV2(j)!==csrWeekdayFilterV2)return false;
+
+    for(const [id,key] of filters){
+      const wanted=val(id);
+      if(!wanted)continue;
+      let actual=j[key];
+      if(key==="type")actual=normalizeType(actual);
+      if(key==="dg")actual=normalizeDg(actual);
+      if(String(actual==null?"":actual)!==wanted)return false;
+    }
+    return true;
+  });
+}
+
+function weekdayForJobV2(j){
+  const d=new Date(String(j.dateOfJob||"")+"T00:00:00");
+  if(Number.isNaN(d.getTime()))return "";
+  return ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getDay()];
+}
+
+function renderAll(){
+  loadUI();
+  const a=filteredJobs();
+  const customerCount=new Set(
+    a.map(x=>String(x.customer||"").trim().toLowerCase()).filter(Boolean)
+  ).size;
+  const totalQty=a.reduce((s,x)=>s+(Number.isFinite(Number(x.qty))?Number(x.qty):0),0);
+  const inbound=a.filter(x=>normalizeType(x.type)==="Inbound").length;
+  const outbound=a.filter(x=>normalizeType(x.type)==="Outbound").length;
+
+  if(el("kCustomerNew"))el("kCustomerNew").textContent=customerCount;
+  if(el("kQtyNew"))el("kQtyNew").textContent=Number(totalQty.toFixed(2));
+  if(el("kInboundNew"))el("kInboundNew").textContent=inbound;
+  if(el("kOutboundNew"))el("kOutboundNew").textContent=outbound;
+  if(el("kLoadingNew"))el("kLoadingNew").textContent=avgTypeHoursV2(a,"Outbound")+" h";
+  if(el("kOffloadingNew"))el("kOffloadingNew").textContent=avgTypeHoursV2(a,"Inbound")+" h";
+
+  renderCharts(a);
+  renderOfficeTable(a);
+  renderMini();
+}
+
+function avgTypeHoursV2(a,type){
+  const vals=a.filter(j=>
+    normalizeType(j.type)===type &&
+    j.reportingTime && j.dispatchTime
+  ).map(j=>hoursBetweenV2(j.reportingTime,j.dispatchTime))
+   .filter(Number.isFinite);
+  return vals.length
+    ?(vals.reduce((s,x)=>s+x,0)/vals.length).toFixed(2)
+    :"0.00";
+}
+
+function hoursBetweenV2(start,off){
+  const parse=t=>{
+    const m=String(t||"").match(/^(\d{1,2}):(\d{2})$/);
+    if(!m)return null;
+    const h=Number(m[1]),mm=Number(m[2]);
+    if(h>23||mm>59)return null;
+    return h*60+mm;
+  };
+  const a=parse(start),b=parse(off);
+  if(a==null||b==null)return null;
+  let mins=b-a;
+  if(mins<0)mins+=1440;
+  return mins/60;
+}
+
+function renderCharts(a){
+  const dg=a.filter(x=>normalizeDg(x.dg)==="DG").length;
+  const non=a.filter(x=>normalizeDg(x.dg)!=="DG").length;
+  const inbound=a.filter(x=>normalizeType(x.type)==="Inbound").length;
+  const outbound=a.filter(x=>normalizeType(x.type)==="Outbound").length;
+
+  const dgTotal=dg+non, typeTotal=inbound+outbound;
+  const dp=dgTotal?dg/dgTotal*100:0;
+  const tp=typeTotal?inbound/typeTotal*100:0;
+
+  if(el("dgDonut"))el("dgDonut").style.background=
+    dgTotal?`conic-gradient(#c85a63 0 ${dp}%,#e7a8ad ${dp}% 100%)`:"#f3e3e5";
+  if(el("typeDonut"))el("typeDonut").style.background=
+    typeTotal?`conic-gradient(#c85a63 0 ${tp}%,#e7a8ad ${tp}% 100%)`:"#f3e3e5";
+
+  if(el("dgText"))el("dgText").textContent=dg+" / "+non;
+  if(el("typeText"))el("typeText").textContent=inbound+" / "+outbound;
+  if(el("dgBtnDG"))el("dgBtnDG").textContent="DG: "+dg;
+  if(el("dgBtnNon"))el("dgBtnNon").textContent="Non-DG: "+non;
+  if(el("typeBtnIn"))el("typeBtnIn").textContent="Inbound: "+inbound;
+  if(el("typeBtnOut"))el("typeBtnOut").textContent="Outbound: "+outbound;
+
+  const dock={};
+  a.forEach(j=>{
+    const key=String(j.dock||"No Dock").trim()||"No Dock";
+    dock[key]=(dock[key]||0)+(Number.isFinite(Number(j.qty))?Number(j.qty):0);
+  });
+  const entries=Object.entries(dock);
+  const max=entries.length?Math.max(...entries.map(x=>x[1]),1):1;
+  if(el("dockChart")){
+    el("dockChart").innerHTML=entries.map(([k,v])=>
+      '<div class="bar-item clickable" onclick="dockClick(event,\''+idArg(k)+'\')" title="Click to filter '+esc(k)+'">'+
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">'+
+      '<div class="bar" style="height:'+Math.max(4,v/max*165)+'px"></div>'+
+      '<div class="bar-label">'+esc(k)+'<br>'+esc(v)+'</div></div></div>'
+    ).join("")||'<div class="small">No data for selected filters</div>';
+  }
+
+  if(el("dgBtnDG"))el("dgBtnDG").classList.toggle("active",val("fDg")==="DG");
+  if(el("dgBtnNon"))el("dgBtnNon").classList.toggle("active",val("fDg")==="Non-DG");
+  if(el("typeBtnIn"))el("typeBtnIn").classList.toggle("active",val("fType")==="Inbound");
+  if(el("typeBtnOut"))el("typeBtnOut").classList.toggle("active",val("fType")==="Outbound");
+
+  renderCsrWeeklyV2(a);
+}
+
+function renderCsrWeeklyV2(a){
+  const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+  const data=days.map(day=>({
+    day,
+    inb:a.filter(j=>weekdayForJobV2(j)===day&&normalizeType(j.type)==="Inbound").length,
+    out:a.filter(j=>weekdayForJobV2(j)===day&&normalizeType(j.type)==="Outbound").length
+  }));
+  const max=Math.max(1,...data.flatMap(x=>[x.inb,x.out]));
+  const box=el("weeklyChart");
+  if(!box)return;
+
+  box.innerHTML=data.map(x=>
+    '<div class="weekly-day">'+
+      '<div class="weekly-bars">'+
+        '<div class="weekly-bar" style="height:'+Math.max(3,x.inb/max*165)+'px" title="'+x.day+' Inbound: '+x.inb+'" onclick="weeklyFilterCsrV2(\''+x.day+'\',\'Inbound\',event)"></div>'+
+        '<div class="weekly-bar out" style="height:'+Math.max(3,x.out/max*165)+'px" title="'+x.day+' Outbound: '+x.out+'" onclick="weeklyFilterCsrV2(\''+x.day+'\',\'Outbound\',event)"></div>'+
+      '</div>'+
+      '<div class="weekly-label">'+x.day.slice(0,3)+'</div>'+
+      '<div class="weekly-value">IN '+x.inb+' • OUT '+x.out+'</div>'+
+    '</div>'
+  ).join("");
+}
+
+function weeklyFilterCsrV2(day,type,ev){
+  if(ev)ev.stopPropagation();
+  csrWeekdayFilterV2=csrWeekdayFilterV2===day?"":day;
+  if(el("fType"))el("fType") .value=csrWeekdayFilterV2?type:"";
+  renderAll();
+}
+
+function setDashboardFilter(id,value){
+  const e=el(id);
+  if(!e)return;
+  e.value=e.value===value?"":value;
+  renderAll();
+}
+
+function toggleDashboardFilter(id,values){
+  const e=el(id);
+  if(!e)return;
+  const idx=values.indexOf(e.value);
+  e.value=idx<0?values[0]:(values[(idx+1)%values.length]||"");
+  renderAll();
+}
+
+function dockClick(ev,encodedDock){
+  if(ev)ev.stopPropagation();
+  const e=el("fDock");
+  if(!e)return;
+  const d=decodeArg(encodedDock);
+  e.value=e.value===d?"":d;
+  renderAll();
+}
+
+function clearDashboardFilters(){
+  ["fDateFrom","fDateTo","fVehicleNumber","fCustomer","fVehicleType","fStatus","fUom","fDg","fDgClass","fCsr","fDock","fType"].forEach(id=>{
+    if(el(id))el(id).value="";
+  });
+  csrWeekdayFilterV2="";
+  renderAll();
+}
+
+/* ---------- MANAGER ---------- */
+let managerWeekdayFilterV2="";
+
+function showManager(name,button){
+  document.querySelectorAll("#managerPage .manager-section").forEach(e=>e.classList.remove("active"));
+  const id=name==="dashboard"?"managerDashboardSection":name==="excel"?"managerExcelSection":"managerCustomSection";
+  if(el(id))el(id).classList.add("active");
+  document.querySelectorAll("#managerPage .manager-tabs .tab").forEach(e=>e.classList.remove("active"));
+  if(button)button.classList.add("active");
+  else{
+    const tabs=document.querySelectorAll("#managerPage .manager-tabs .tab");
+    if(name==="dashboard"&&tabs[0])tabs[0].classList.add("active");
+  }
+  if(name==="dashboard")renderManagerDashboard();
+}
+
+function setManagerOpts(){
+  const pairs=[
+    ["mfCustomer",masters.customers],["mfVehicleType",masters.vehicles],["mfStatus",masters.statuses],
+    ["mfUom",masters.uoms],["mfDgClass",masters.dgclass],["mfCsr",masters.csrs],["mfDock",masters.docks],
+    ["mfType",["Inbound","Outbound"]]
+  ];
+  pairs.forEach(([id,list])=>setOpts(id,list,true));
+
+  const dg=el("mfDg"),oldDg=dg?dg.value:"";
+  if(dg){
+    dg.innerHTML='<option value="">All</option><option value="DG">DG</option><option value="Non-DG">Non-DG</option>';
+    dg.value=oldDg||"";
+  }
+
+  const w=el("mfWeekday"),oldW=w?w.value||managerWeekdayFilterV2:"";
+  if(w){
+    w.innerHTML='<option value="">All</option>'+["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map(x=>'<option>'+x+'</option>').join("");
+    w.value=oldW;
+  }
+}
+
+function managerFilteredJobsV2(){
+  const df=val("mfDateFrom"),dt=val("mfDateTo"),vn=val("mfVehicleNumber").toLowerCase();
+  const filters=[
+    ["mfCustomer","customer"],["mfVehicleType","vehicle"],["mfStatus","status"],["mfUom","uom"],
+    ["mfDg","dg"],["mfDgClass","dgClass"],["mfCsr","csr"],["mfDock","dock"],["mfType","type"]
+  ];
+  return jobs.filter(j=>{
+    const jd=String(j.dateOfJob||"");
+    if(df&&jd<df)return false;
+    if(dt&&jd>dt)return false;
+    if(vn&&!String(j.vehicleNumber||"").toLowerCase().includes(vn))return false;
+    const wd=val("mfWeekday")||managerWeekdayFilterV2;
+    if(wd&&weekdayForJobV2(j)!==wd)return false;
+
+    for(const [id,key] of filters){
+      const wanted=val(id);
+      if(!wanted)continue;
+      let actual=j[key];
+      if(key==="type")actual=normalizeType(actual);
+      if(key==="dg")actual=normalizeDg(actual);
+      if(String(actual==null?"":actual)!==wanted)return false;
+    }
+    return true;
+  });
+}
+
+function clearManagerFilters(){
+  ["mfDateFrom","mfDateTo","mfVehicleNumber","mfCustomer","mfVehicleType","mfStatus","mfUom","mfDg","mfDgClass","mfCsr","mfDock","mfType","mfWeekday"].forEach(id=>{
+    if(el(id))el(id).value="";
+  });
+  managerWeekdayFilterV2="";
+  renderManagerDashboard();
+}
+
+function setManagerFilter(id,value){
+  const e=el(id);if(!e)return;
+  e.value=e.value===value?"":value;
+  renderManagerDashboard();
+}
+
+function renderManagerDashboard(){
+  setManagerOpts();
+  const a=managerFilteredJobsV2();
+  const customerCount=new Set(a.map(x=>String(x.customer||"").trim().toLowerCase()).filter(Boolean)).size;
+  const totalQty=a.reduce((s,x)=>s+(Number.isFinite(Number(x.qty))?Number(x.qty):0),0);
+  const inbound=a.filter(x=>normalizeType(x.type)==="Inbound").length;
+  const outbound=a.filter(x=>normalizeType(x.type)==="Outbound").length;
+
+  if(el("mkCustomer"))el("mkCustomer").textContent=customerCount;
+  if(el("mkQty"))el("mkQty").textContent=Number(totalQty.toFixed(2));
+  if(el("mkInbound"))el("mkInbound").textContent=inbound;
+  if(el("mkOutbound"))el("mkOutbound").textContent=outbound;
+  if(el("mkLoading"))el("mkLoading").textContent=avgTypeHoursV2(a,"Outbound")+" h";
+  if(el("mkOffloading"))el("mkOffloading").textContent=avgTypeHoursV2(a,"Inbound")+" h";
+
+  renderManagerChartsV2(a);
+}
+
+function renderManagerBarsV2(id,entries,kind){
+  const box=el(id);if(!box)return;
+  const max=entries.length?Math.max(...entries.map(x=>x[1]),1):1;
+  box.innerHTML=entries.map(([k,v])=>
+    '<div class="bar-item clickable" title="Click to filter '+esc(k)+'" onclick="managerBarClickV2(\''+kind+'\',\''+idArg(k)+'\',event)">'+
+    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">'+
+    '<div class="bar" style="height:'+Math.max(4,v/max*165)+'px"></div>'+
+    '<div class="bar-label">'+esc(k)+'<br>'+esc(v)+'</div></div></div>'
+  ).join("")||'<div class="small">No data for selected filters</div>';
+}
+
+function managerBarClickV2(kind,encoded,ev){
+  if(ev)ev.stopPropagation();
+  const key=decodeArg(encoded);
+  if(kind==="dock"){
+    setManagerFilter("mfDock",key);
+  }else if(kind==="dgclass"){
+    setManagerFilter("mfDgClass",key);
+  }else if(kind==="dgclassdock"){
+    const parts=key.split(" • ");
+    const dgClass=parts.shift()||"";
+    const dock=parts.join(" • ");
+    if(el("mfDgClass"))el("mfDgClass").value=dgClass;
+    if(el("mfDock"))el("mfDock").value=dock;
+    renderManagerDashboard();
+  }
+}
+
+function renderManagerCsrBarsV2(a){
+  const grouped={};
+  a.forEach(j=>{
+    const c=String(j.csr||"No CSR");
+    if(!grouped[c])grouped[c]={Inbound:0,Outbound:0};
+    const t=normalizeType(j.type);
+    if(t==="Inbound"||t==="Outbound")grouped[c][t]++;
+  });
+  const entries=Object.entries(grouped);
+  const max=Math.max(1,...entries.flatMap(([c,v])=>[v.Inbound,v.Outbound]));
+  const box=el("mCsrTypeChart");if(!box)return;
+  box.innerHTML=entries.map(([c,v])=>
+    '<div class="bar-item clickable" title="Click to filter '+esc(c)+'" onclick="managerCsrClickV2(\''+idArg(c)+'\',event)">'+
+    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">'+
+    '<div style="display:flex;align-items:flex-end;gap:3px;height:165px">'+
+    '<div class="bar" style="height:'+Math.max(3,v.Inbound/max*155)+'px" title="Inbound: '+v.Inbound+'"></div>'+
+    '<div class="bar bar2" style="height:'+Math.max(3,v.Outbound/max*155)+'px" title="Outbound: '+v.Outbound+'"></div>'+
+    '</div><div class="bar-label">'+esc(c)+'<br>IN '+v.Inbound+' • OUT '+v.Outbound+'</div>'+
+    '</div></div>'
+  ).join("")||'<div class="small">No CSR data</div>';
+}
+
+function managerCsrClickV2(encoded,ev){
+  if(ev)ev.stopPropagation();
+  const c=decodeArg(encoded);
+  if(el("mfCsr"))el("mfCsr").value=el("mfCsr").value===c?"":c;
+  renderManagerDashboard();
+}
+
+function renderManagerWeeklyV2(a){
+  const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+  const data=days.map(day=>({
+    day,
+    inb:a.filter(j=>weekdayForJobV2(j)===day&&normalizeType(j.type)==="Inbound").length,
+    out:a.filter(j=>weekdayForJobV2(j)===day&&normalizeType(j.type)==="Outbound").length
+  }));
+  const max=Math.max(1,...data.flatMap(x=>[x.inb,x.out]));
+  const box=el("mWeeklyChart");if(!box)return;
+  box.innerHTML=data.map(x=>
+    '<div class="weekly-day">'+
+    '<div class="weekly-bars">'+
+    '<div class="weekly-bar" style="height:'+Math.max(3,x.inb/max*165)+'px" title="'+x.day+' Inbound: '+x.inb+'" onclick="managerWeeklyClickV2(\''+x.day+'\',\'Inbound\',event)"></div>'+
+    '<div class="weekly-bar out" style="height:'+Math.max(3,x.out/max*165)+'px" title="'+x.day+' Outbound: '+x.out+'" onclick="managerWeeklyClickV2(\''+x.day+'\',\'Outbound\',event)"></div>'+
+    '</div><div class="weekly-label">'+x.day.slice(0,3)+'</div><div class="weekly-value">IN '+x.inb+' • OUT '+x.out+'</div>'+
+    '</div>'
+  ).join("");
+}
+
+function managerWeeklyClickV2(day,type,ev){
+  if(ev)ev.stopPropagation();
+  managerWeekdayFilterV2=managerWeekdayFilterV2===day?"":day;
+  if(el("mfWeekday"))el("mfWeekday").value=managerWeekdayFilterV2;
+  if(el("mfType"))el("mfType").value=managerWeekdayFilterV2?type:"";
+  renderManagerDashboard();
+}
+
+function renderManagerChartsV2(a){
+  const dg=a.filter(x=>normalizeDg(x.dg)==="DG").length;
+  const non=a.length-dg;
+  const inbound=a.filter(x=>normalizeType(x.type)==="Inbound").length;
+  const outbound=a.filter(x=>normalizeType(x.type)==="Outbound").length;
+
+  const dtotal=dg+non,ttotal=inbound+outbound;
+  const dp=dtotal?dg/dtotal*100:0,tp=ttotal?inbound/ttotal*100:0;
+
+  if(el("mDgDonut"))el("mDgDonut").style.background=dtotal?`conic-gradient(#c85a63 0 ${dp}%,#e7a8ad ${dp}% 100%)`:"#f3e3e5";
+  if(el("mTypeDonut"))el("mTypeDonut").style.background=ttotal?`conic-gradient(#c85a63 0 ${tp}%,#e7a8ad ${tp}% 100%)`:"#f3e3e5";
+  if(el("mDgText"))el("mDgText").textContent=dg+" / "+non;
+  if(el("mTypeText"))el("mTypeText").textContent=inbound+" / "+outbound;
+  if(el("mDgBtnDG"))el("mDgBtnDG").textContent="DG: "+dg;
+  if(el("mDgBtnNon"))el("mDgBtnNon").textContent="Non-DG: "+non;
+  if(el("mTypeBtnIn"))el("mTypeBtnIn").textContent="Inbound: "+inbound;
+  if(el("mTypeBtnOut"))el("mTypeBtnOut").textContent="Outbound: "+outbound;
+
+  if(el("mDgDonut"))el("mDgDonut").onclick=()=>toggleManagerFilter("mfDg",["DG","Non-DG"]);
+  if(el("mTypeDonut"))el("mTypeDonut").onclick=()=>toggleManagerFilter("mfType",["Inbound","Outbound"]);
+
+  const dock={};
+  a.forEach(j=>{
+    const k=String(j.dock||"No Dock").trim()||"No Dock";
+    dock[k]=(dock[k]||0)+(Number.isFinite(Number(j.qty))?Number(j.qty):0);
+  });
+  renderManagerBarsV2("mDockChart",Object.entries(dock),"dock");
+
+  const dgClassQty={};
+  a.filter(j=>normalizeDg(j.dg)==="DG").forEach(j=>{
+    const k=String(j.dgClass||"Unspecified").trim()||"Unspecified";
+    dgClassQty[k]=(dgClassQty[k]||0)+(Number.isFinite(Number(j.qty))?Number(j.qty):0);
+  });
+  renderManagerBarsV2("mDgClassChart",Object.entries(dgClassQty),"dgclass");
+
+  const dgDock={};
+  a.filter(j=>normalizeDg(j.dg)==="DG").forEach(j=>{
+    const k=(String(j.dgClass||"Unspecified").trim()||"Unspecified")+" • "+(String(j.dock||"No Dock").trim()||"No Dock");
+    dgDock[k]=(dgDock[k]||0)+(Number.isFinite(Number(j.qty))?Number(j.qty):0);
+  });
+  renderManagerBarsV2("mDgClassDockChart",Object.entries(dgDock),"dgclassdock");
+
+  renderManagerCsrBarsV2(a);
+  renderManagerWeeklyV2(a);
+}
+
+/* Empty fallback manager call kept compatible with old initialization */
+function renderManager(){
+  if(el("managerPage") && el("managerPage").classList.contains("active"))renderManagerDashboard();
+}
+
+/* custom dashboard placeholder file name */
+if(el("customDashboardFile")){
+  el("customDashboardFile").addEventListener("change",()=>{
+    const file=el("customDashboardFile").files&&el("customDashboardFile").files[0];
+    if(el("customDashboardFileName"))el("customDashboardFileName").textContent=file?file.name:"No file selected";
+  });
 }
 
 
